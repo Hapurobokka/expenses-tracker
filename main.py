@@ -1,7 +1,8 @@
-import tkinter
+# import tkinter
 import sqlite3
 
 DATABASE = "database.db"
+
 
 # DONE
 def run_query(query, parameters=()) -> sqlite3.Cursor:
@@ -44,8 +45,13 @@ def search_id(table, row, data):
 
 # ------------------------------------------------------------------------------
 
+
 def check_registers(current_register):
-    searched_register = request_data('SELECT id FROM registers WHERE date_id = ? AND shift_id = ? AND employee_id = ?', current_register)
+    """
+    Compares the given register with the database. If it's already there returns it's id.
+    Otherwise, it prompts the user to add it."""
+    searched_register = request_data('SELECT id FROM registers WHERE date_id = ? AND shift_id = ? '
+                                     + 'AND employee_id = ?', current_register)
 
     if not searched_register:
         print("Este turno parece no estar registrado en la base de datos, ¿quiere registrarlo?")
@@ -60,6 +66,9 @@ def check_registers(current_register):
 
 
 def get_current_register_info(register_id):
+    """
+    Returns a tuple with the information of the current register.
+    If there are no coincidences, returns an empty tuple."""
     query = """
     SELECT d.date, s.shift, e.employee_name
     FROM registers r
@@ -77,21 +86,22 @@ def get_total_machine_prices(acc, db_rows):
     "Gets the total of prices given by machines for the current day and shift"
     if len(db_rows) != 0:
         return get_total_machine_prices(acc + db_rows[0][4], db_rows[1:])
-    else:
-        return acc
+
+    return acc
 
 
-def ask_for_information(table, row, information):
+def ask_for_information(bundled_info):
     """
     Asks for input on the given data. If it already exists in the table, returns it's id.
     Otherwise, asks if the user wants to add it to the table"""
+    table, row, information = bundled_info
     current_info = input(f"{information.upper()}: ")
 
     if not check_if_in_database(table, row, current_info):
         print(f"{information} no registrado. ¿Quiere añadirlo a la base de datos?")
 
         if input("> ") != "y":
-            return None
+            return bundled_info
 
         add_data(f'INSERT INTO {table} VALUES (NULL, ?)', (current_info, ))
         print(f"{information} añadido.")
@@ -101,32 +111,48 @@ def ask_for_information(table, row, information):
 # ------------------------------------------------------------------------------
 
 def show_current_register_info(register_id):
+    """
+    Prints to the screen the information of the current register"""
     current_register_info = get_current_register_info(register_id)
     print(f"Hoy es {current_register_info[0].capitalize()}.") # type: ignore
     print(f"En el turno de la {current_register_info[1].capitalize()}.") # type: ignore
     print(f"Y esta trabajando {current_register_info[2].capitalize()}.") # type: ignore
 
-def main(date_id, shift_id, employee_id, register_id):
-    if not register_id:
-        if date_id is None:
-            return main(ask_for_information('dates', 'date', 'fecha'), shift_id, employee_id, register_id)
 
-        if shift_id is None:
-            current_shift_id = int(input("TURNO: "))
-            return main(date_id, current_shift_id, employee_id, register_id)
+def get_current_shift_information(requested_info):
+    """
+    Uses the requested information to return a tuple with the id's of the current shift"""
+    current_information = []
+    for info in requested_info:
+        if isinstance(info, tuple):
+            current_information.append(ask_for_information(info))
+        else:
+            current_information.append(info)
 
-        if employee_id is None:
-            return main(date_id, shift_id, ask_for_information('employees', 'employee_name', 'empleado'), register_id)
+    if not all(isinstance(x, int) for x in current_information):
+        return get_current_shift_information(current_information)
 
-        current_register_id = check_registers((date_id, shift_id, employee_id))
+    return tuple(current_information)
 
-        if not current_register_id:
-            return main(date_id, shift_id, employee_id, register_id)
 
-        return main(date_id, shift_id, employee_id, current_register_id)
+def get_current_shift_id(required_info):
+    """
+    Uses the requiered info to get a tuple with this shift id's and gets it's id on the registers"""
+    current_shift_info = get_current_shift_information(required_info)
+    current_shift_id = None
+    while not current_shift_id:
+        current_shift_id = check_registers(current_shift_info)
 
+    return current_shift_id
+
+def main():
+    "The program's entry point"
+    requested_info = [('dates', 'date', 'fecha'),
+                      ('shifts', 'shift', 'turno'),
+                      ('employees', 'employee_name', 'empleado')]
+    register_id = get_current_shift_id(requested_info)
     show_current_register_info(register_id)
 
 
 if __name__ == "__main__":
-    main(None, None, None, None)
+    main()
