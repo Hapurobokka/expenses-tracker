@@ -1,3 +1,8 @@
+"""
+Archivo principal del programa, de momento.
+
+Hecho por Hapurobokka.
+"""
 # import tkinter
 import sqlite3
 
@@ -45,6 +50,78 @@ def search_id(table, row, data):
 
 # ------------------------------------------------------------------------------
 
+def get_total_machine_prices(acc, db_rows):
+    "Gets the total of prices given by machines for the current day and shift"
+    if len(db_rows) != 0:
+        return get_total_machine_prices(acc + db_rows[0][4], db_rows[1:])
+
+    return acc
+
+
+def test_machine_entry(entry: list[str]) -> bool:
+    """
+    Tests if the entry for the any of the machine tables (machine_table or replenishments) is valid
+    """
+    if len(entry) != 2:
+        return False
+
+    if len(entry[0]) != 2:
+        return False
+
+    if not str.isalpha(entry[0][0]) and not str.isnumeric(entry[0][1]):
+        return False
+
+    if not str.isnumeric(entry[1]):
+        return False
+
+    return True
+
+
+def format_machine_entry(prompt: str):
+    """
+    Gets a prompt, then splits it through the whitespace and uses a function to
+    check if it conforts to the format. If not, returns false. Otherwise, capitalizes it and
+    returns a tuple"""
+    unformated_entry = prompt.split()
+
+    if not test_machine_entry(unformated_entry):
+        return False
+
+    formated_entry = [x.upper() for x in unformated_entry]
+    return (formated_entry[0], int(formated_entry[1]))
+
+
+def insert_into_machine_table(prompt, table, register):
+    """
+    Inserts the given prompt, correctly formated, into the given table from these
+    two: machine_table, replenishments"""
+    entry = format_machine_entry(prompt)
+
+    if not entry:
+        print("ENTRADA INCORRECTA. REVISE SI ESTA ESCRITA CORRECTAMENTE.")
+        return
+
+    add_data(f'INSERT INTO {table} VALUES (NULL, ?, ?, ?)', (register, *entry))
+    print("ENTRADA AÑADIDA CORRECTAMENTE")
+
+
+def get_prompts_for_machine_table(register_id, table):
+    """
+    Gets in a loop entries for a machine table."""
+    print("Ahora mismo esta trabajando con {}".format(table))
+    print("Introduce un texto del estilo 'nombre_maquina cantidad'. Ejemplo 'a2 200'.")
+    print("Cuando quiera termina escriba '.exit'.")
+
+    entry = ""
+    while True:
+        entry = input("> ")
+
+        if entry == ".exit":
+            break
+
+        insert_into_machine_table(entry, table, register_id)
+
+# ------------------------------------------------------------------------------
 
 def check_registers(current_register):
     """
@@ -81,15 +158,6 @@ def get_current_register_info(register_id):
     except IndexError:
         return (None, None, None)
 
-
-def get_total_machine_prices(acc, db_rows):
-    "Gets the total of prices given by machines for the current day and shift"
-    if len(db_rows) != 0:
-        return get_total_machine_prices(acc + db_rows[0][4], db_rows[1:])
-
-    return acc
-
-
 def ask_for_information(bundled_info):
     """
     Asks for input on the given data. If it already exists in the table, returns it's id.
@@ -108,7 +176,6 @@ def ask_for_information(bundled_info):
 
     return search_id(table, row, current_info)
 
-# ------------------------------------------------------------------------------
 
 def show_current_register_info(register_id):
     """
@@ -145,13 +212,58 @@ def get_current_shift_id(required_info):
 
     return current_shift_id
 
+# ------------------------------------------------------------------------------
+
+def get_numeric_input():
+    """
+    Prompts the user to insert text. If it's not a number, recurs"""
+    try:
+        good_input = int(input("> "))
+    except ValueError:
+        print("Ingresa un número por favor")
+        return get_numeric_input()
+
+    return good_input
+
+def main_menu(register_id):
+    """
+    Shows the main menu and asks the user to enter a command"""
+    print("\n¿Qué necesita hacer?")
+    print("1. Insertar premios de maquinas")
+    print("2. Insertar reposiciones")
+    print("3. Insertar ventas de productos")
+    print("4. Insertar un gasto")
+    print("5. Insertar fondos o dinero entrante")
+    print("6. Generar reporte del turno")
+    print("7. Terminar turno")
+    print("8. Salir del programa\n")
+    command = get_numeric_input()
+
+    match command:
+        case 1:
+            get_prompts_for_machine_table(register_id, 'machine_table')
+        case 2:
+            get_prompts_for_machine_table(register_id, 'replenishments')
+        case x_1 if x_1 in range(3, 8):
+            print("No implementado xd")
+        case 8:
+            return True
+
+    return False
+
+
 def main():
     "The program's entry point"
     requested_info = [('dates', 'date', 'fecha'),
                       ('shifts', 'shift', 'turno'),
                       ('employees', 'employee_name', 'empleado')]
     register_id = get_current_shift_id(requested_info)
+    has_the_program_ended = False
+
     show_current_register_info(register_id)
+
+    while not has_the_program_ended:
+        has_the_program_ended = main_menu(register_id)
 
 
 if __name__ == "__main__":
