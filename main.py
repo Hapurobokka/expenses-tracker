@@ -8,8 +8,9 @@ import sqlite3
 
 DATABASE = "database.db"
 
+# ------------------------------------------------------------------------------
+# DATABASE QUERYING SECTION
 
-# DONE
 def run_query(query, parameters=()) -> sqlite3.Cursor:
     "Runs a query for the external database"
     with sqlite3.connect(DATABASE) as conn:
@@ -30,10 +31,10 @@ def add_data(query, desired_data):
     run_query(query, desired_data)
 
 
-def delete_data(undesired_data):
+def delete_data(table, data_id):
     "Deletes the record matching the id"
-    query = "DELETE FROM machine_table WHERE id = ?"
-    run_query(query, (undesired_data, ))
+    query = f"DELETE FROM {table} WHERE id = ?"
+    run_query(query, (data_id, ))
 
 
 def check_if_in_database(table_to_check, column_to_check, data):
@@ -49,6 +50,7 @@ def search_id(table, row, data):
         return None
 
 # ------------------------------------------------------------------------------
+# MACHINES TABLES SECTION
 
 def get_total_machine_prices(acc, db_rows):
     "Gets the total of prices given by machines for the current day and shift"
@@ -108,9 +110,9 @@ def insert_into_machine_table(prompt, table, register):
 def get_prompts_for_machine_table(register_id, table):
     """
     Gets in a loop entries for a machine table."""
-    print("Ahora mismo esta trabajando con {}".format(table))
+    print(f"\nAhora mismo esta trabajando con {table}")
     print("Introduce un texto del estilo 'nombre_maquina cantidad'. Ejemplo 'a2 200'.")
-    print("Cuando quiera termina escriba '.exit'.")
+    print("Cuando quiera termina escriba '.exit'.\n")
 
     entry = ""
     while True:
@@ -122,6 +124,7 @@ def get_prompts_for_machine_table(register_id, table):
         insert_into_machine_table(entry, table, register_id)
 
 # ------------------------------------------------------------------------------
+# REGISTER CHECKING SECTION (si fuera mejor programador seria MUCHO menos)
 
 def check_registers(current_register):
     """
@@ -153,10 +156,12 @@ def get_current_register_info(register_id):
     JOIN shifts s ON s.id = r.shift_id
     JOIN employees e on e.id = r.employee_id
     WHERE r.id = ?"""
+
     try:
         return request_data(query, (register_id, ))[0]
     except IndexError:
         return (None, None, None)
+
 
 def ask_for_information(bundled_info):
     """
@@ -165,7 +170,7 @@ def ask_for_information(bundled_info):
     table, row, information = bundled_info
     current_info = input(f"{information.upper()}: ")
 
-    if not check_if_in_database(table, row, current_info):
+    if not check_if_in_database(table, row, current_info) and table != 'shifts':
         print(f"{information} no registrado. ¿Quiere añadirlo a la base de datos?")
 
         if input("> ") != "y":
@@ -173,6 +178,10 @@ def ask_for_information(bundled_info):
 
         add_data(f'INSERT INTO {table} VALUES (NULL, ?)', (current_info, ))
         print(f"{information} añadido.")
+
+    elif not check_if_in_database(table, row, current_info) and table == "shifts":
+        print("Turno no existente. Por favor elija entre [Mañana, Tarde, Noche]")
+        return bundled_info
 
     return search_id(table, row, current_info)
 
@@ -213,17 +222,280 @@ def get_current_shift_id(required_info):
     return current_shift_id
 
 # ------------------------------------------------------------------------------
+# PRODUCTS SECTION
 
-def get_numeric_input():
+def check_if_product(product_id):
+    """
+    Checks if a product exists on the database using an id. If it doesn' exists
+    returns None. Else, returns a tuple with the product's information."""
+    product = request_data('SELECT * FROM products WHERE id = ?', (product_id, ))
+
+    if not product:
+        print("No existe un producto con esa id en la base de datos.")
+        return None
+
+    return product[0]
+
+
+def check_if_product_register(product_register_id):
+    """
+    Checks if the current day has sales of a given product"""
+    query = """
+    SELECT ps.id, ps.register_id, p.product_name, ps.in_product, ps.out_product, ps.profits
+    FROM products_sales ps
+    JOIN products p ON p.id = ps.product_id
+    WHERE ps.id = ?;
+    """
+    register = request_data(query, (product_register_id, ))
+
+    if not register:
+        print("No existe un registro de productos con esa id en la base de datos.")
+        return None
+
+    return register[0]
+
+
+def display_product(product):
+    """
+    Shows a product in a formated way"""
+    print(f"ID: {product[0]} | NOMBRE: {product[1].capitalize()} | PRECIO: {product[2]}")
+
+
+def display_register(register):
+    """Shows a product register in a formated way"""
+    print(f"ID: {register[0]} | PRODUCTO: {register[2].capitalize()} | IN: {register[3]} "
+          + f"| OUT: {register[4]} | GANANCIA: {register[5]}")
+
+
+def show_all_product_registers(register_id):
+    """
+    Shows all of the products registers"""
+    query = """
+SELECT ps.id, ps.register_id, p.product_name, ps.in_product, ps.out_product, ps.profits
+FROM products_sales ps
+JOIN products p ON p.id = ps.product_id
+WHERE ps.register_id = ?;
+    """
+    registers_list = request_data(query, (register_id, ))
+
+    for register in registers_list:
+        display_register(register)
+
+
+def fill_product_row(register_id):
+    """
+    Fills a row of the producs_sales table with the reported amounts.
+    Also calculates the profit."""
+    query = 'INSERT INTO products_sales VALUES (NULL, ?, ?, ?, ?, ?)'
+
+    print("Indica la id del producto que quieres reportar")
+    print("(Puede verla seleccionando 'Mostrar lista de productos' en el menù anterior)")
+    product_id = get_numeric_input("ID: ")
+
+    product = check_if_product(product_id)
+
+    if not product:
+        return
+
+    _, product_name, product_price = product
+
+    print(f"Indique que cantidad de {product_name} tenía en stock")
+    in_product = get_numeric_input("> ")
+
+    print(f"Indique con que cantidad de {product_name} termino el turno")
+    out_product = get_numeric_input("> ")
+
+    profit = (in_product - out_product) * product_price
+
+    print(f"Este es el reporte de {product_name}")
+    display_register((register_id, product_id, in_product, out_product, profit))
+
+    print("\n¿Esta seguro que quiere registrarlo? [y/n]")
+
+    command = input("> ")
+
+    if command != "y":
+        print("\nREGISTRO NO AÑADIDO")
+        return
+
+    add_data(query, (register_id, product_id, in_product, out_product, profit))
+
+
+def edit_product_row():
+    """
+    Edits a row from the products_sales tables"""
+    query = """UPDATE products_sales
+    SET in_product = ?, out_product = ?, profits = ?
+    WHERE id = ?"""
+
+    print("Indica la id del registro a editar")
+    print("(Puede verla seleccionando 'Mostrar lista de registros' en el menù anterior)")
+
+    product_register_id = get_numeric_input("ID: ")
+
+    product_register = check_if_product_register(product_register_id)
+
+    if not product_register:
+        return
+
+    product_price = request_data('SELECT price FROM products WHERE product_name = ?',
+                                 (product_register[2], ))[0][0]
+
+    display_register(product_register)
+
+    print("Inserte los nuevos valores")
+
+    new_in_product = get_numeric_input("IN: ")
+    new_out_product = get_numeric_input("OUT: ")
+    new_profit = (new_in_product - new_out_product) * product_price
+
+    print("¿Esta seguro de que quiere editar este registro con estos valores?")
+    display_register((product_register[0], None, product_register[2],
+                      new_in_product, new_out_product, new_profit))
+
+    command = input("> ")
+
+    if command != "y":
+        print("\nREGISTRO NO ACTUALIZADO\n")
+        return
+
+    run_query(query, (new_in_product, new_out_product, new_profit, product_register_id))
+    print("\nRegistro actualizado\n")
+
+
+def show_all_products():
+    """
+    Shows all products on the database"""
+    products_list = request_data('SELECT * FROM products', ())
+
+    for product in products_list:
+        display_product(product)
+
+
+def add_product():
+    """
+    Adds a product to the database"""
+    print("\nInserte nombre y precio del producto.")
+    product_name = input("PRODUCTO: ")
+    product_price = get_numeric_input("PRECIO: ")
+
+    print("¿Quiere añadir este producto? [y/n]")
+    print(f"NOMBRE: {product_name} | PRECIO: {product_price}")
+    command = input("> ")
+
+    if command != "y":
+        print("\nPRODUCTO NO AÑADIDO")
+        return
+
+    add_data('INSERT INTO products VALUES (NULL, ?, ?)', (product_name, product_price))
+    print("Producto añadido de forma exitosa")
+
+
+def remove_product():
+    """
+    Removes a product from the database"""
+    print("Indique la id del producto que quiere eliminar.")
+    print("(Puede verla seleccionando 'Mostrar lista de productos' en el menù anterior)")
+    product_id = get_numeric_input("ID: ")
+
+    product = check_if_product(product_id)
+    print(product)
+
+    if not product:
+        return
+
+    print("¿Esta seguro de que quiere borrar este producto?")
+    display_product(product)
+
+    command = input("> ")
+
+    if command != "y":
+        print("\nPRODUCTO NO ELIMINADO\n")
+        return
+
+    delete_data('products', product_id)
+
+
+def edit_product():
+    """
+    Edits a product in the database"""
+    print("Indique la id del producto que quiere editar.")
+    print("(Puede verla seleccionando 'Mostrar lista de productos' en el menù anterior)")
+
+    product_id = get_numeric_input("ID: ")
+    product = check_if_product(product_id)
+    query = "UPDATE products SET product_name = ?, price = ? WHERE id = ?"
+
+    if not product:
+        return
+
+    display_product(product)
+    print("Inserte los nuevos valores")
+
+    new_name = input("NOMBRE: ")
+    new_price = get_numeric_input("PRECIO: ")
+
+    print("¿Esta seguro de que quiere editar este producto con estos valores?")
+    print(f"NOMBRE: {new_name} | PRECIO: {new_price}")
+
+    command = input("> ")
+
+    if command != "y":
+        print("\nPRODUCTO NO EDITADO\n")
+        return
+
+    run_query(query, (new_name, new_price, product_id))
+    print("\nProducto actualizado\n")
+
+
+def products_submenu(register_id):
+    """
+    Submenu for all operations concerning the products table"""
+    while True:
+        print("\nSelecciona un comando:")
+        print("1. Mostrar lista de productos")
+        print("2. Añadir un producto")
+        print("3. Eliminar un producto")
+        print("4. Cambiar precio de un producto")
+        print("5. Reportar ventas del turno de hoy")
+        print("6. Editar ventas del turno de hoy")
+        print("7. Mostrar ventas de hoy")
+        print("8. Salir\n")
+
+        command = get_numeric_input("> ")
+
+        match command:
+            case 1:
+                show_all_products()
+            case 2:
+                add_product()
+            case 3:
+                remove_product()
+            case 4:
+                edit_product()
+            case 5:
+                fill_product_row(register_id)
+            case 6:
+                edit_product_row()
+            case 7:
+                show_all_product_registers(register_id)
+            case 8:
+                break
+
+# ------------------------------------------------------------------------------
+# MAIN MENU SECTION
+
+def get_numeric_input(prompt):
     """
     Prompts the user to insert text. If it's not a number, recurs"""
     try:
-        good_input = int(input("> "))
+        good_input = int(input(prompt))
     except ValueError:
         print("Ingresa un número por favor")
-        return get_numeric_input()
+        return get_numeric_input(prompt)
 
     return good_input
+
 
 def main_menu(register_id):
     """
@@ -231,20 +503,22 @@ def main_menu(register_id):
     print("\n¿Qué necesita hacer?")
     print("1. Insertar premios de maquinas")
     print("2. Insertar reposiciones")
-    print("3. Insertar ventas de productos")
+    print("3. Administrar productos")
     print("4. Insertar un gasto")
     print("5. Insertar fondos o dinero entrante")
     print("6. Generar reporte del turno")
     print("7. Terminar turno")
     print("8. Salir del programa\n")
-    command = get_numeric_input()
+    command = get_numeric_input("> ")
 
     match command:
         case 1:
             get_prompts_for_machine_table(register_id, 'machine_table')
         case 2:
             get_prompts_for_machine_table(register_id, 'replenishments')
-        case x_1 if x_1 in range(3, 8):
+        case 3:
+            products_submenu(register_id)
+        case x_1 if x_1 in range(4, 8):
             print("No implementado xd")
         case 8:
             return True
