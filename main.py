@@ -55,6 +55,15 @@ def search_id(table, row, data):
         return None
 
 
+def show_all_records(table, register_id):
+    """
+    Shows all the records in a table with a given register id"""
+    record_list = request_data(f'SELECT * FROM {table} WHERE register_id = ?', (register_id, ))
+
+    for record in record_list:
+        display_record(record)
+
+
 def display_record(record):
     """
     Properly displays a record"""
@@ -168,6 +177,42 @@ def get_prompts_for_machine_table(register_id, table):
             break
 
         insert_into_machine_table(entry, table, register_id)
+
+
+def machine_submenu(register_id):
+    """
+    Submenu for all operations related with machines"""
+    while True:
+        print("\nSelecciona un comando:")
+        print("1. Ver premios de maquinas y reposiciones")
+        print("2. Insertar premios de maquinas")
+        print("3. Insertar reposiciones")
+        print("4. Editar precios de maquinas")
+        print("5. Editar reposiciones")
+        print("6. Salir\n")
+
+        command = get_numeric_input("> ")
+        print("\n")
+
+        match command:
+            case 1:
+                print("MAQUINAS")
+                show_all_records('machine_table', register_id)
+
+                print("\n--------------------------------------------------------------")
+
+                print("REPOSICIONES")
+                show_all_records('replenishments', register_id)
+            case 2:
+                get_prompts_for_machine_table(register_id, 'machine_table')
+            case 3:
+                get_prompts_for_machine_table(register_id, 'replenishments')
+            case 4:
+                edit_record('machine_table', 'id', test_machine_name)
+            case 5:
+                edit_record('replenishments', 'id', test_machine_name)
+            case 6:
+                break
 
 # ------------------------------------------------------------------------------
 # REGISTER CHECKING SECTION (si fuera mejor programador seria MUCHO menos)
@@ -535,26 +580,23 @@ def main_menu(register_id):
     """
     Shows the main menu and asks the user to enter a command"""
     print("\n¿Qué necesita hacer?")
-    print("1. Insertar premios de maquinas")
-    print("2. Insertar reposiciones")
-    print("3. Administrar productos")
-    print("4. Insertar un gasto")
-    print("5. Insertar fondos o dinero entrante")
-    print("6. Generar reporte del turno")
-    print("7. Terminar turno")
-    print("8. Salir del programa\n")
+    print("1. Administrar maquinas")
+    print("2. Administrar productos")
+    print("3. Insertar un gasto")
+    print("4. Insertar fondos o dinero entrante")
+    print("5. Generar reporte del turno")
+    print("6. Terminar turno")
+    print("7. Salir del programa\n")
     command = get_numeric_input("> ")
 
     match command:
         case 1:
-            get_prompts_for_machine_table(register_id, 'machine_table')
+            machine_submenu(register_id)
         case 2:
-            get_prompts_for_machine_table(register_id, 'replenishments')
-        case 3:
             products_submenu(register_id)
-        case x_1 if x_1 in range(4, 8):
+        case x_1 if x_1 in range(3, 7):
             print("No implementado xd")
-        case 8:
+        case 7:
             return True
 
     return False
