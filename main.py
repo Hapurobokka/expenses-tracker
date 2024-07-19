@@ -39,7 +39,12 @@ def delete_data(table, data_id):
 
 def check_if_in_database(table_to_check, column_to_check, data):
     "Check if the given data exists in a table"
-    return request_data(f"SELECT * FROM {table_to_check} WHERE {column_to_check} = ?", (data, ))
+    record = request_data(f"SELECT * FROM {table_to_check} WHERE {column_to_check} = ?", (data, ))
+
+    if not record:
+        print("No se ha encontrado una coincidencia en la base de datos")
+
+    return record
 
 
 def search_id(table, row, data):
@@ -48,6 +53,50 @@ def search_id(table, row, data):
         return request_data(f'SELECT id FROM {table} WHERE {row} = ?', (data, ))[0][0]
     except IndexError:
         return None
+
+
+def display_record(record):
+    """
+    Properly displays a record"""
+    print(f"ID: {record[0]} | NOMBRE: {record[2]} | CANTIDAD: {record[3]}")
+
+
+def edit_record(table, row, format_fun=None):
+    """
+    Edits a record in a table with the rows: id, record_id, _name, amount"""
+    update_query = f"UPDATE {table} set {row} = ?, amount = ? WHERE id = ?"
+
+    record_id = get_numeric_input("ID: ")
+
+    try:
+        record = check_if_in_database(table, 'id', record_id)[0]
+    except IndexError:
+        print("ID no existente")
+        return
+
+    display_record(record)
+
+    print("Inserte los nuevos valores")
+
+    new_name = input("NOMBRE: ")
+    new_int = input("CANTIDAD: ")
+
+    if format_fun:
+        if not format_fun(new_name):
+            print("Formato incorrecto. Registro no actualizado.")
+            return
+
+    print("¿Esta seguro de que quiere editar este producto con estos valores?")
+    print(f"NOMBRE: {new_name} | PRECIO: {new_int}")
+
+    command = input("> ")
+
+    if command != "y":
+        print("\nREGISTRO NO EDITADO\n")
+        return
+
+    run_query(update_query, (new_name.upper(), new_int, record_id))
+    print("\nRegistro actualizado\n")
 
 # ------------------------------------------------------------------------------
 # MACHINES TABLES SECTION
@@ -60,33 +109,30 @@ def get_total_machine_prices(acc, db_rows):
     return acc
 
 
-def test_machine_entry(entry: list[str]) -> bool:
+def test_machine_name(entry: str) -> bool:
     """
     Tests if the entry for the any of the machine tables (machine_table or replenishments) is valid
     """
     if len(entry) != 2:
         return False
 
-    if len(entry[0]) != 2:
-        return False
-
-    if not str.isalpha(entry[0][0]) and not str.isnumeric(entry[0][1]):
-        return False
-
-    if not str.isnumeric(entry[1]):
+    if not str.isalpha(entry[0]) and not str.isnumeric(entry[1]):
         return False
 
     return True
 
 
-def format_machine_entry(prompt: str):
+def format_machine_entry(prompt):
     """
     Gets a prompt, then splits it through the whitespace and uses a function to
     check if it conforts to the format. If not, returns false. Otherwise, capitalizes it and
     returns a tuple"""
     unformated_entry = prompt.split()
 
-    if not test_machine_entry(unformated_entry):
+    if not test_machine_name(unformated_entry):
+        return False
+
+    if not str.isnumeric(unformated_entry[1]):
         return False
 
     formated_entry = [x.upper() for x in unformated_entry]
@@ -224,19 +270,6 @@ def get_current_shift_id(required_info):
 # ------------------------------------------------------------------------------
 # PRODUCTS SECTION
 
-def check_if_product(product_id):
-    """
-    Checks if a product exists on the database using an id. If it doesn' exists
-    returns None. Else, returns a tuple with the product's information."""
-    product = request_data('SELECT * FROM products WHERE id = ?', (product_id, ))
-
-    if not product:
-        print("No existe un producto con esa id en la base de datos.")
-        return None
-
-    return product[0]
-
-
 def check_if_product_register(product_register_id):
     """
     Checks if the current day has sales of a given product"""
@@ -292,9 +325,10 @@ def fill_product_row(register_id):
     print("(Puede verla seleccionando 'Mostrar lista de productos' en el menù anterior)")
     product_id = get_numeric_input("ID: ")
 
-    product = check_if_product(product_id)
-
-    if not product:
+    try:
+        product = check_if_in_database('products', 'id', product_id)[0]
+    except IndexError:
+        print("ID no existente.")
         return
 
     _, product_name, product_price = product
@@ -398,7 +432,7 @@ def remove_product():
     print("(Puede verla seleccionando 'Mostrar lista de productos' en el menù anterior)")
     product_id = get_numeric_input("ID: ")
 
-    product = check_if_product(product_id)
+    product = check_if_in_database('products', 'id', product_id)[0]
     print(product)
 
     if not product:
@@ -423,7 +457,7 @@ def edit_product():
     print("(Puede verla seleccionando 'Mostrar lista de productos' en el menù anterior)")
 
     product_id = get_numeric_input("ID: ")
-    product = check_if_product(product_id)
+    product = check_if_in_database('products', 'id', product_id)[0]
     query = "UPDATE products SET product_name = ?, price = ? WHERE id = ?"
 
     if not product:
