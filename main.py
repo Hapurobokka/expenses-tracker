@@ -60,6 +60,7 @@ def show_all_records(table, register_id):
     Shows all the records in a table with a given register id"""
     record_list = request_data(f'SELECT * FROM {table} WHERE register_id = ?', (register_id, ))
 
+    print("\n")
     for record in record_list:
         display_record(record)
 
@@ -71,7 +72,7 @@ def display_record(record):
     print(f"ID: {record[0]} | NOMBRE: {record[record_length - 2]} | INT: {record[record_length - 1]}")
 
 
-def add_record(concepts, table):
+def add_record(concepts, table, register_id):
     """
     Adds a record to the database"""
     print(f"\nInserte nombre y {concepts[0]} del {concepts[1]}")
@@ -86,7 +87,12 @@ def add_record(concepts, table):
         print("\nPRODUCTO NO AÑADIDO")
         return
 
-    add_data(f'INSERT INTO {table} VALUES (NULL, ?, ?)', (record_name, record_int))
+    if table == 'products':
+        add_data(f'INSERT INTO {table} VALUES (NULL, ?, ?)', (record_name, record_int))
+    else:
+        add_data(f'INSERT INTO {table} VALUES (NULL, ?, ?, ?)',
+                 (register_id, record_name, record_int))
+
     print(f"{concepts[1]} añadido de forma exitosa")
 
 
@@ -516,11 +522,11 @@ def products_submenu(register_id):
             case 1:
                 show_all_products()
             case 2:
-                add_record(('precio', 'Producto'), 'products')
+                add_record(('precio', 'Producto'), 'products', register_id)
             case 3:
                 remove_record('Producto', 'products')
             case 4:
-                edit_record('products', 'product_name', 'price')
+                edit_record('products', 'product_name', 'price', register_id)
             case 5:
                 fill_product_row(register_id)
             case 6:
@@ -533,8 +539,30 @@ def products_submenu(register_id):
 # ------------------------------------------------------------------------------
 # EXPENSES SECTION
 
-def expenses_submenu():
-    pass
+def expenses_submenu(register_id):
+    """
+    Submenu for all operation about expenses"""
+    while True:
+        print("\nSelecciona un comando:")
+        print("1. Mostrar todos los gastos")
+        print("2. Añadir un gasto")
+        print("3. Borrar un gasto")
+        print("4. Editar un gasto")
+        print("5. Salir\n")
+
+        command = get_numeric_input("> ")
+
+        match command:
+            case 1:
+                show_all_records('expenses', register_id)
+            case 2:
+                add_record(('cantidad', 'Gasto'), 'expenses', register_id)
+            case 3:
+                remove_record('Gasto', 'expenses')
+            case 4:
+                edit_record('expenses', 'concept', 'amount')
+            case 5:
+                break
 
 # ------------------------------------------------------------------------------
 # MAIN MENU SECTION
@@ -557,7 +585,7 @@ def main_menu(register_id):
     print("\n¿Qué necesita hacer?")
     print("1. Administrar maquinas")
     print("2. Administrar productos")
-    print("3. Insertar un gasto")
+    print("3. Administrar gastos")
     print("4. Insertar fondos o dinero entrante")
     print("5. Generar reporte del turno")
     print("6. Terminar turno")
@@ -569,7 +597,9 @@ def main_menu(register_id):
             machine_submenu(register_id)
         case 2:
             products_submenu(register_id)
-        case x_1 if x_1 in range(3, 7):
+        case 3:
+            expenses_submenu(register_id)
+        case x_1 if x_1 in range(4, 7):
             print("No implementado xd")
         case 7:
             return True
