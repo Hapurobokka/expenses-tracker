@@ -67,13 +67,58 @@ def show_all_records(table, register_id):
 def display_record(record):
     """
     Properly displays a record"""
-    print(f"ID: {record[0]} | NOMBRE: {record[2]} | CANTIDAD: {record[3]}")
+    record_length = len(record)
+    print(f"ID: {record[0]} | NOMBRE: {record[record_length - 2]} | INT: {record[record_length - 1]}")
 
 
-def edit_record(table, row, format_fun=None):
+def add_record(concepts, table):
+    """
+    Adds a record to the database"""
+    print(f"\nInserte nombre y {concepts[0]} del {concepts[1]}")
+    record_name = input("NOMBRE: ")
+    record_int = get_numeric_input(f"{concepts[0].upper()}: ")
+
+    print(f"¿Quiere añadir este {concepts[1]}?")
+    print(f"NOMBRE: {record_name} | {concepts[0].upper()}: {record_int}")
+    command = input("> ")
+
+    if command != "y":
+        print("\nPRODUCTO NO AÑADIDO")
+        return
+
+    add_data(f'INSERT INTO {table} VALUES (NULL, ?, ?)', (record_name, record_int))
+    print(f"{concepts[1]} añadido de forma exitosa")
+
+
+def remove_record(concept, table):
+    """
+    Removes a record from the database"""
+    print(f"Indique la id del {concept} que quiere eliminar.")
+    print("(Puede verla en el menù anterior)")
+    record_id = get_numeric_input("ID: ")
+
+    record = check_if_in_database(table, 'id', record_id)[0]
+
+    if not record:
+        return
+
+    print(f"¿Esta seguro de que quiere borrar este {concept}?")
+    display_record(record)
+
+    command = input("> ")
+
+    if command != "y":
+        print(f"\n{concept.upper()} NO ELIMINADO\n")
+        return
+
+    delete_data(table, record_id)
+    print(f"{concept} eliminado correctamente")
+
+
+def edit_record(table, row_1, row_2, format_fun=None):
     """
     Edits a record in a table with the rows: id, record_id, _name, amount"""
-    update_query = f"UPDATE {table} set {row} = ?, amount = ? WHERE id = ?"
+    update_query = f"UPDATE {table} set {row_1} = ?, {row_2} = ? WHERE id = ?"
 
     record_id = get_numeric_input("ID: ")
 
@@ -88,14 +133,14 @@ def edit_record(table, row, format_fun=None):
     print("Inserte los nuevos valores")
 
     new_name = input("NOMBRE: ")
-    new_int = input("CANTIDAD: ")
+    new_int = get_numeric_input("CANTIDAD: ")
 
     if format_fun:
         if not format_fun(new_name):
             print("Formato incorrecto. Registro no actualizado.")
             return
 
-    print("¿Esta seguro de que quiere editar este producto con estos valores?")
+    print("¿Esta seguro de que quiere editar con estos valores?")
     print(f"NOMBRE: {new_name} | PRECIO: {new_int}")
 
     command = input("> ")
@@ -208,9 +253,9 @@ def machine_submenu(register_id):
             case 3:
                 get_prompts_for_machine_table(register_id, 'replenishments')
             case 4:
-                edit_record('machine_table', 'id', test_machine_name)
+                edit_record('machine_table', 'machine_name', test_machine_name)
             case 5:
-                edit_record('replenishments', 'id', test_machine_name)
+                edit_record('replenishments', 'machine_name', test_machine_name)
             case 6:
                 break
 
@@ -451,82 +496,6 @@ def show_all_products():
         display_product(product)
 
 
-def add_product():
-    """
-    Adds a product to the database"""
-    print("\nInserte nombre y precio del producto.")
-    product_name = input("PRODUCTO: ")
-    product_price = get_numeric_input("PRECIO: ")
-
-    print("¿Quiere añadir este producto? [y/n]")
-    print(f"NOMBRE: {product_name} | PRECIO: {product_price}")
-    command = input("> ")
-
-    if command != "y":
-        print("\nPRODUCTO NO AÑADIDO")
-        return
-
-    add_data('INSERT INTO products VALUES (NULL, ?, ?)', (product_name, product_price))
-    print("Producto añadido de forma exitosa")
-
-
-def remove_product():
-    """
-    Removes a product from the database"""
-    print("Indique la id del producto que quiere eliminar.")
-    print("(Puede verla seleccionando 'Mostrar lista de productos' en el menù anterior)")
-    product_id = get_numeric_input("ID: ")
-
-    product = check_if_in_database('products', 'id', product_id)[0]
-    print(product)
-
-    if not product:
-        return
-
-    print("¿Esta seguro de que quiere borrar este producto?")
-    display_product(product)
-
-    command = input("> ")
-
-    if command != "y":
-        print("\nPRODUCTO NO ELIMINADO\n")
-        return
-
-    delete_data('products', product_id)
-
-
-def edit_product():
-    """
-    Edits a product in the database"""
-    print("Indique la id del producto que quiere editar.")
-    print("(Puede verla seleccionando 'Mostrar lista de productos' en el menù anterior)")
-
-    product_id = get_numeric_input("ID: ")
-    product = check_if_in_database('products', 'id', product_id)[0]
-    query = "UPDATE products SET product_name = ?, price = ? WHERE id = ?"
-
-    if not product:
-        return
-
-    display_product(product)
-    print("Inserte los nuevos valores")
-
-    new_name = input("NOMBRE: ")
-    new_price = get_numeric_input("PRECIO: ")
-
-    print("¿Esta seguro de que quiere editar este producto con estos valores?")
-    print(f"NOMBRE: {new_name} | PRECIO: {new_price}")
-
-    command = input("> ")
-
-    if command != "y":
-        print("\nPRODUCTO NO EDITADO\n")
-        return
-
-    run_query(query, (new_name, new_price, product_id))
-    print("\nProducto actualizado\n")
-
-
 def products_submenu(register_id):
     """
     Submenu for all operations concerning the products table"""
@@ -547,11 +516,11 @@ def products_submenu(register_id):
             case 1:
                 show_all_products()
             case 2:
-                add_product()
+                add_record(('precio', 'Producto'), 'products')
             case 3:
-                remove_product()
+                remove_record('Producto', 'products')
             case 4:
-                edit_product()
+                edit_record('products', 'product_name', 'price')
             case 5:
                 fill_product_row(register_id)
             case 6:
@@ -560,6 +529,12 @@ def products_submenu(register_id):
                 show_all_product_registers(register_id)
             case 8:
                 break
+
+# ------------------------------------------------------------------------------
+# EXPENSES SECTION
+
+def expenses_submenu():
+    pass
 
 # ------------------------------------------------------------------------------
 # MAIN MENU SECTION
