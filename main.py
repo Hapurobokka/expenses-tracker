@@ -69,7 +69,8 @@ def display_record(record):
     """
     Properly displays a record"""
     record_length = len(record)
-    print(f"ID: {record[0]} | NOMBRE: {record[record_length - 2]} | INT: {record[record_length - 1]}")
+    print(f"ID: {record[0]} | NOMBRE: {record[record_length - 2]} |"
+          + f"INT: {record[record_length - 1]}")
 
 
 def add_record(concepts, table, register_id):
@@ -118,7 +119,7 @@ def remove_record(concept, table):
         return
 
     delete_data(table, record_id)
-    print(f"{concept} eliminado correctamente")
+    print(f"{concept.capitalize()} eliminado correctamente")
 
 
 def edit_record(table, row_1, row_2, format_fun=None):
@@ -238,9 +239,11 @@ def machine_submenu(register_id):
         print("1. Ver premios de maquinas y reposiciones")
         print("2. Insertar premios de maquinas")
         print("3. Insertar reposiciones")
-        print("4. Editar precios de maquinas")
-        print("5. Editar reposiciones")
-        print("6. Salir\n")
+        print("4. Eliminar premio")
+        print("5. Eliminar reposición")
+        print("6. Editar precios de maquinas")
+        print("7. Editar reposiciones")
+        print("8. Salir\n")
 
         command = get_numeric_input("> ")
         print("\n")
@@ -259,10 +262,14 @@ def machine_submenu(register_id):
             case 3:
                 get_prompts_for_machine_table(register_id, 'replenishments')
             case 4:
-                edit_record('machine_table', 'machine_name', test_machine_name)
+                remove_record('premio', 'machine_table')
             case 5:
-                edit_record('replenishments', 'machine_name', test_machine_name)
+                remove_record('reposición', 'replenishments')
             case 6:
+                edit_record('machine_table', 'machine_name', test_machine_name)
+            case 7:
+                edit_record('replenishments', 'machine_name', test_machine_name)
+            case 8:
                 break
 
 # ------------------------------------------------------------------------------
@@ -583,10 +590,10 @@ def main_menu(register_id):
     """
     Shows the main menu and asks the user to enter a command"""
     print("\n¿Qué necesita hacer?")
-    print("1. Administrar maquinas")
-    print("2. Administrar productos")
-    print("3. Administrar gastos")
-    print("4. Insertar fondos o dinero entrante")
+    print("1. Insertar fondos o dinero entrante")
+    print("2. Administrar maquinas")
+    print("3. Administrar productos")
+    print("4. Administrar gastos")
     print("5. Generar reporte del turno")
     print("6. Terminar turno")
     print("7. Salir del programa\n")
@@ -594,15 +601,19 @@ def main_menu(register_id):
 
     match command:
         case 1:
-            machine_submenu(register_id)
+            print("Por implementar")
         case 2:
-            products_submenu(register_id)
+            machine_submenu(register_id)
         case 3:
+            products_submenu(register_id)
+        case 4:
             expenses_submenu(register_id)
-        case x_1 if x_1 in range(4, 7):
+        case x_1 if x_1 in range(5, 7):
             print("No implementado xd")
         case 7:
             return True
+        case _:
+            print("Comando desconocido")
 
     return False
 
