@@ -82,10 +82,8 @@ def add_record(concepts, table, register_id):
 
     print(f"¿Quiere añadir este {concepts[1]}?")
     print(f"NOMBRE: {record_name} | {concepts[0].upper()}: {record_int}")
-    command = input("> ")
 
-    if command != "y":
-        print("\nPRODUCTO NO AÑADIDO")
+    if not ask_confirmation():
         return
 
     if table == 'products':
@@ -112,10 +110,7 @@ def remove_record(concept, table):
     print(f"¿Esta seguro de que quiere borrar este {concept}?")
     display_record(record)
 
-    command = input("> ")
-
-    if command != "y":
-        print(f"\n{concept.upper()} NO ELIMINADO\n")
+    if not ask_confirmation():
         return
 
     delete_data(table, record_id)
@@ -150,10 +145,7 @@ def edit_record(table, row_1, row_2, format_fun=None):
     print("¿Esta seguro de que quiere editar con estos valores?")
     print(f"NOMBRE: {new_name} | PRECIO: {new_int}")
 
-    command = input("> ")
-
-    if command != "y":
-        print("\nREGISTRO NO EDITADO\n")
+    if not ask_confirmation():
         return
 
     run_query(update_query, (new_name.upper(), new_int, record_id))
@@ -285,7 +277,7 @@ def check_registers(current_register):
     if not searched_register:
         print("Este turno parece no estar registrado en la base de datos, ¿quiere registrarlo?")
 
-        if input("> ") != "y":
+        if not ask_confirmation():
             return False
 
         add_data('INSERT INTO registers VALUES (NULL, ?, ?, ?)', current_register)
@@ -322,7 +314,7 @@ def ask_for_information(bundled_info):
     if not check_if_in_database(table, row, current_info) and table != 'shifts':
         print(f"{information} no registrado. ¿Quiere añadirlo a la base de datos?")
 
-        if input("> ") != "y":
+        if not ask_confirmation():
             return bundled_info
 
         add_data(f'INSERT INTO {table} VALUES (NULL, ?)', (current_info, ))
@@ -449,10 +441,7 @@ def fill_product_row(register_id):
 
     print("\n¿Esta seguro que quiere registrarlo? [y/n]")
 
-    command = input("> ")
-
-    if command != "y":
-        print("\nREGISTRO NO AÑADIDO")
+    if not ask_confirmation():
         return
 
     add_data(query, (register_id, product_id, in_product, out_product, profit))
@@ -490,10 +479,7 @@ def edit_product_row():
     display_register((product_register[0], None, product_register[2],
                       new_in_product, new_out_product, new_profit))
 
-    command = input("> ")
-
-    if command != "y":
-        print("\nREGISTRO NO ACTUALIZADO\n")
+    if not ask_confirmation():
         return
 
     run_query(query, (new_in_product, new_out_product, new_profit, product_register_id))
@@ -570,6 +556,28 @@ def expenses_submenu(register_id):
                 edit_record('expenses', 'concept', 'amount')
             case 5:
                 break
+# ------------------------------------------------------------------------------
+# FUNDS SECTION
+
+def insert_funds(archive):
+    if "funds" in archive:
+        print("¿Quiere editar los fondos iniciales de este turno?")
+
+        if not ask_confirmation():
+            return archive
+
+        print("Inserte los nuevos fondos")
+        archive["funds"] = get_numeric_input("FONDOS: ")
+        print("Fondos actualizados")
+        return archive
+
+    print("Indique los fondos iniciales del turno: ")
+    archive["funds"] = get_numeric_input("FONDOS: ")
+    print("Fondos establecidos")
+    return archive
+
+# ------------------------------------------------------------------------------
+# SHIFTS END SECTION
 
 # ------------------------------------------------------------------------------
 # MAIN MENU SECTION
@@ -584,6 +592,17 @@ def get_numeric_input(prompt):
         return get_numeric_input(prompt)
 
     return good_input
+
+
+def ask_confirmation():
+    "Asks the user for confirmation"
+    command = input("> ")
+
+    if command != "y":
+        print("OPERACIÓN NO REALIZADA")
+        return False
+
+    return True
 
 
 def main_menu(register_id):
