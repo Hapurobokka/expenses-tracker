@@ -151,6 +151,24 @@ def edit_record(table, row_1, row_2, format_fun=None):
     run_query(update_query, (new_name.upper(), new_int, record_id))
     print("\nRegistro actualizado\n")
 
+
+def get_quantities(concept, table, register_id):
+    return request_data(f'SELECT {concept} FROM {table} WHERE register_id = ?', (register_id, ))
+
+
+def get_total_amount(concept, table, register_id):
+    quantities = get_quantities(concept, table, register_id)
+
+    if not quantities:
+        return 0
+
+    total = 0
+
+    for q in quantities:
+        total = total + q[0]
+
+    return total
+
 # ------------------------------------------------------------------------------
 # MACHINES TABLES SECTION
 
@@ -223,9 +241,12 @@ def get_prompts_for_machine_table(register_id, table):
         insert_into_machine_table(entry, table, register_id)
 
 
-def machine_submenu(register_id):
+def machine_submenu(register_id, archive):
     """
     Submenu for all operations related with machines"""
+
+    new_archive = archive
+
     while True:
         print("\nSelecciona un comando:")
         print("1. Ver premios de maquinas y reposiciones")
@@ -263,6 +284,12 @@ def machine_submenu(register_id):
                 edit_record('replenishments', 'machine_name', test_machine_name)
             case 8:
                 break
+
+    total_prices = get_total_amount('amount', 'machine_table', register_id)
+    total_replenishments = get_total_amount('amount', 'replenishments', register_id)
+
+    new_archive["machine_total"] = total_prices + total_replenishments
+    return new_archive
 
 # ------------------------------------------------------------------------------
 # REGISTER CHECKING SECTION (si fuera mejor programador seria MUCHO menos)
@@ -437,7 +464,7 @@ def fill_product_row(register_id):
     profit = (in_product - out_product) * product_price
 
     print(f"Este es el reporte de {product_name}")
-    display_register((register_id, product_id, in_product, out_product, profit))
+    display_register((register_id, _, product_name, in_product, out_product, profit))
 
     print("\n¿Esta seguro que quiere registrarlo? [y/n]")
 
@@ -495,9 +522,10 @@ def show_all_products():
         display_product(product)
 
 
-def products_submenu(register_id):
+def products_submenu(register_id, archive):
     """
     Submenu for all operations concerning the products table"""
+    new_archive = archive
     while True:
         print("\nSelecciona un comando:")
         print("1. Mostrar lista de productos")
@@ -529,12 +557,18 @@ def products_submenu(register_id):
             case 8:
                 break
 
+    new_archive["products_income"] = get_total_amount('profits', 'products_sales', register_id)
+    return new_archive
+
+
 # ------------------------------------------------------------------------------
 # EXPENSES SECTION
 
-def expenses_submenu(register_id):
+def expenses_submenu(register_id, archive):
     """
     Submenu for all operation about expenses"""
+    new_archive = archive
+
     while True:
         print("\nSelecciona un comando:")
         print("1. Mostrar todos los gastos")
@@ -556,10 +590,17 @@ def expenses_submenu(register_id):
                 edit_record('expenses', 'concept', 'amount')
             case 5:
                 break
+
+    new_archive["total_expenses"] = get_total_amount('amount', 'expenses', register_id)
+    return new_archive
+
+
 # ------------------------------------------------------------------------------
 # FUNDS SECTION
 
-def insert_funds(archive):
+def set_funds(archive):
+    """
+    Sets the initial funds of the shift."""
     if "funds" in archive:
         print("¿Quiere editar los fondos iniciales de este turno?")
 
@@ -575,6 +616,74 @@ def insert_funds(archive):
     archive["funds"] = get_numeric_input("FONDOS: ")
     print("Fondos establecidos")
     return archive
+
+
+def add_funds(archive):
+    """
+    Adds "increments" to the initial funds of the shift"""
+    if "added_funds" in archive:
+        print("¿Quiere añadir más fondos?")
+
+        if not ask_confirmation():
+            return archive
+
+    else:
+        archive["added_funds"] = []
+
+    print("Indique de cuanto será el incremento")
+    increment = get_numeric_input("INCREMENTO: ")
+    archive["added_funds"].append(increment)
+    return archive
+
+
+def remove_funds(archive):
+    """
+    Removes the first matching increment found in the added_funds list"""
+    if not "added_funds" in archive:
+        print("No se han añadido fondos a los fondos iniciales")
+        return archive
+
+    print("Indique que incremento quiere remover")
+    print("(Indique la cantidad)")
+
+    for i in archive["added_funds"]:
+        print(i)
+
+    command = get_numeric_input("INCREMENTO: ")
+
+    if command in archive["added_funds"]:
+        return archive["added_funds"].remove(command)
+
+    print("No existe tal incremento")
+    return archive["added_funds"]
+
+
+def funds_submenu(archive):
+    """
+    Submenu for all operations regarding funds"""
+    new_archive = archive
+
+    while True:
+        print(new_archive)
+        print("\nSelecciona un comando")
+        print("1. Establecer fondos iniciales")
+        print("2. Añadir más fondos")
+        print("3. Eliminar fondos")
+        print("4. Salir\n")
+
+        command = get_numeric_input("> ")
+
+        match command:
+            case 1:
+                new_archive = set_funds(archive)
+            case 2:
+                new_archive = add_funds(archive)
+            case 3:
+                new_archive = remove_funds(archive)
+            case 4:
+                break
+
+    return new_archive
 
 # ------------------------------------------------------------------------------
 # SHIFTS END SECTION
@@ -605,10 +714,11 @@ def ask_confirmation():
     return True
 
 
-def main_menu(register_id):
+def main_menu(register_id, archive):
     """
     Shows the main menu and asks the user to enter a command"""
     print("\n¿Qué necesita hacer?")
+    print(archive)
     print("1. Insertar fondos o dinero entrante")
     print("2. Administrar maquinas")
     print("3. Administrar productos")
@@ -617,24 +727,28 @@ def main_menu(register_id):
     print("6. Terminar turno")
     print("7. Salir del programa\n")
     command = get_numeric_input("> ")
+    new_archive = None
 
     match command:
         case 1:
-            print("Por implementar")
+            new_archive = funds_submenu(archive)
         case 2:
-            machine_submenu(register_id)
+            new_archive = machine_submenu(register_id, archive)
         case 3:
-            products_submenu(register_id)
+            new_archive = products_submenu(register_id, archive)
         case 4:
-            expenses_submenu(register_id)
+            new_archive = expenses_submenu(register_id, archive)
         case x_1 if x_1 in range(5, 7):
             print("No implementado xd")
         case 7:
-            return True
+            return (archive, True)
         case _:
             print("Comando desconocido")
 
-    return False
+    if new_archive:
+        return (new_archive, False)
+
+    return (archive, False)
 
 
 def main():
@@ -646,9 +760,10 @@ def main():
     has_the_program_ended = False
 
     show_current_register_info(register_id)
+    archive = {}
 
     while not has_the_program_ended:
-        has_the_program_ended = main_menu(register_id)
+        archive, has_the_program_ended = main_menu(register_id, archive)
 
 
 if __name__ == "__main__":
