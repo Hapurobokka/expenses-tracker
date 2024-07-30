@@ -17,22 +17,34 @@ class App:
         self.wind = cool_window
         self.wind.title("Expense Tracker")
 
-        self.products_frame = tkinter.LabelFrame(self.wind, text="Ventas de productos")
-        self.products_frame.grid(row=0, column=2)
+        self.machine_frame = tkinter.Frame(self.wind)
+        self.machine_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+
+        self.replenish_frame = tkinter.Frame(self.wind)
+        self.replenish_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
+
+        self.expenses_frame = tkinter.Frame(self.wind)
+        self.expenses_frame.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
+
+        self.products_sales_frame = tkinter.Frame(self.wind)
+        self.products_sales_frame.grid(row=0, column=2, padx=10, pady=10, sticky="nsew")
 
         # Vamos a ir cambiando estas labels poco a poco
-        tkinter.Label(self.wind, text="Premios de maquinas").grid(row=0, column=0)
-        tkinter.Label(self.wind, text="Reposiciones de maquinas").grid(row=0, column=1)
-        tkinter.Label(self.wind, text="Gastos").grid(row=2, column=1, pady=10)
+        tkinter.Label(self.machine_frame, text="Premios de maquinas").grid(row=0, column=0)
+        tkinter.Label(self.replenish_frame, text="Reposiciones de maquinas").grid(row=0, column=0)
+        tkinter.Label(self.expenses_frame, text="Gastos").grid(row=0, column=0)
+        tkinter.Label(self.products_sales_frame, text="Ventas productos").grid(row=0, column=0)
 
         # Crea los treeviews
-        self.machine_tree = ttk.Treeview(columns=["name", "amount"], height=10)
-        self.replenish_tree = ttk.Treeview(columns=["name", "amount"])
-        self.expenses_tree = ttk.Treeview(columns=["name", "amount"])
-        self.products_sales_tree = ttk.Treeview(columns=["product_name", "in_product", "out_product", "profits"])
+        self.machine_tree = ttk.Treeview(self.machine_frame, columns=["name", "amount"])
+        self.replenish_tree = ttk.Treeview(self.replenish_frame, columns=["name", "amount"])
+        self.expenses_tree = ttk.Treeview(self.expenses_frame, columns=["name", "amount"])
+        self.products_sales_tree = ttk.Treeview(self.products_sales_frame, columns=["product_name", "in_product", "out_product", "profits"])
 
-        tkinter.Button(self.wind, text="Ver productos", command = lambda: ev.show_products(self.wind)).grid(row=2, column=2)
-        
+        btn_products = tkinter.Button(self.products_sales_frame, text="Ver productos")
+        btn_products.grid(row=2, column=0)
+        btn_products.bind("<Button-1>", lambda _: ev.show_products(self.wind))
+
         # Los llena con datos de la base de datos
         self.setup_simple_tree(self.machine_tree, 
                                'machine_table',
@@ -41,13 +53,11 @@ class App:
         self.setup_simple_tree(self.replenish_tree,
                                'replenishments',
                                ['id', 'machine_name', 'amount'],
-                               (1, 1),
-                               (20, 0))
+                               (1, 0))
         self.setup_simple_tree(self.expenses_tree,
                                'expenses',
                                ['id', 'concept', 'amount'],
-                               (3, 1),
-                               (20, 0))
+                               (1, 0))
         self.setup_products_tree()
 
     def setup_simple_tree(self, tree, table, values, pos, padding=(0, 0)):
@@ -66,7 +76,7 @@ class App:
         core.fill_table(tree, query, 10)
 
     def setup_products_tree(self):
-        self.products_sales_tree.grid(row=1, column=2, padx=20)
+        self.products_sales_tree.grid(row=1, column=0)
 
         self.products_sales_tree.heading("#0", text="ID", anchor=tkinter.CENTER)
         self.products_sales_tree.heading("product_name", text="Nombre", anchor=tkinter.CENTER)

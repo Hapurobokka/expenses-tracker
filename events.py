@@ -28,6 +28,6 @@ def show_products(window):
     products_tree.column("price", width=90)
     products_tree.grid(row=0, column=0)
 
-    query = f'SELECT * FROM products'
+    query = 'SELECT * FROM products'
 
     core.fill_table(products_tree, query)
