@@ -8,9 +8,11 @@ import tkinter
 from tkinter import ttk
 import core
 
+
 def validate_fields(fields: list):
     """ Valida que todos los elementos de la lista tengan una longitud diferente a 0"""
     return all(lambda x: len(x) != 0 for x in fields)
+
 
 def perform_add_record(tree_container, register_id, en_name, en_amount):
     """Realiza la transacción de añadir un elemento a una tabla"""
@@ -34,6 +36,7 @@ def perform_add_record(tree_container, register_id, en_name, en_amount):
     en_name.delete(0, tkinter.END)
     en_amount.delete(0, tkinter.END)
 
+
 def check_valid_selection(tree: ttk.Treeview):
     """Revisa si hay un elemento seleccionado en el Treeview pasado como argumento"""
     try:
@@ -44,23 +47,31 @@ def check_valid_selection(tree: ttk.Treeview):
 
     return True
 
+
 def erase_record(tree_container, register_id):
     """Borra una entrada de la lista"""
     if not check_valid_selection(tree_container["tree"]):
         return
+
     record_id = tree_container["tree"].item(tree_container["tree"].selection())['text']
+
     core.delete_record(tree_container["table"], record_id)
-    query = f"""
-    SELECT id, {core.comma_separated_string(tree_container["table_values"][1:])} 
-    FROM {tree_container["table"]} WHERE register_id = ?
-    """
+    if tree_container["table"] == "products_sales":
+        query = """
+        SELECT ps.id, p.product_name, ps.in_product, ps.out_product, ps.profits
+        FROM products_sales ps
+        JOIN products p ON p.id = ps.product_id
+        WHERE ps.register_id = ?
+        """
+    else:
+        query = f"""
+        SELECT id, {core.comma_separated_string(tree_container["table_values"][1:])}
+        FROM {tree_container["table"]} WHERE register_id = ?
+        """
     core.fill_table(tree_container["tree"], query, register_id)
 
-def perform_alter_record(edit_wind,
-                         tree_container,
-                         record_id,
-                         register_id,
-                         buttons):
+
+def perform_alter_record(edit_wind, tree_container, record_id, register_id, buttons):
     """Realiza la transaccón de editar un elemento en la tabla"""
     if not validate_fields([buttons[0].get(), buttons[1].get()]):
         return
@@ -82,5 +93,60 @@ def perform_alter_record(edit_wind,
     SELECT id, {core.comma_separated_string(tree_container["table_values"][1:])} 
     FROM {tree_container["table"]} WHERE register_id = ?
     """
-    print(core.request_data(query2, (10, )))
+
     core.fill_table(tree_container["tree"], query2, register_id)
+
+
+def get_profits(combo, fields):
+    query = 'SELECT price FROM products WHERE product_name = ?'
+    selected_item = combo.get()
+
+    try:
+        price = core.request_data(query, (selected_item, ))[0][0]
+    except IndexError:
+        return 0
+
+    try:
+        x = int(fields[0].get())
+        y = int(fields[1].get())
+    except ValueError:
+        return 0
+
+    return (x - y) * price
+
+def create_profits(combo, entry, entry_var, fields):
+    if not validate_fields([combo.get(), fields[0].get(), fields[1].get()]):
+        return
+
+    profits = get_profits(combo, fields)
+
+    entry.config(state="normal")
+    entry_var.set(profits)
+    entry.config(state="readonly")
+
+
+def add_products_record(combo, fields, tree, register_id):
+    if not validate_fields([combo.get(), fields[0].get(), fields[1].get()]):
+        return
+
+    profits = get_profits(combo, fields)
+    product_id = core.request_data('SELECT id FROM products WHERE product_name = ?', (combo.get(), ))[0][0]
+
+    try:
+        in_product = int(fields[0].get())
+        out_product = int(fields[1].get())
+    except ValueError:
+        return
+
+    core.create_record('products_sales',
+                       ['register_id', 'product_id', 'in_product', 'out_product', 'profits'],
+                       (register_id, product_id, in_product, out_product, profits))
+
+    query = """
+    SELECT ps.id, p.product_name, ps.in_product, ps.out_product, ps.profits
+    FROM products_sales ps
+    JOIN products p ON p.id = ps.product_id
+    WHERE ps.register_id = ?
+    """
+
+    core.fill_table(tree, query, register_id)
