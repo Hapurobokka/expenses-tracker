@@ -16,7 +16,7 @@ REGISTER_ID = 10
 
 def spawn_product_report_window(root, tree):
     """Crea la ventana que permite añadir un reporte de ventas de un producto"""
-    query = 'SELECT product_name FROM products'
+    query = "SELECT product_name FROM products"
 
     new_win = tkinter.Toplevel(root)
 
@@ -41,17 +41,21 @@ def spawn_product_report_window(root, tree):
     add_button.grid(row=3, column=1, sticky="ew", columnspan=2, pady=10)
 
     combo.bind(
-        "<FocusOut>", lambda _: ev.create_profits(combo, frozen, frozen_var, [entry_1, entry_2])
+        "<FocusOut>",
+        lambda _: ev.create_profits(combo, frozen, frozen_var, [entry_1, entry_2]),
     )
     entry_1.bind(
-        "<FocusOut>", lambda _: ev.create_profits(combo, frozen, frozen_var, [entry_1, entry_2])
+        "<FocusOut>",
+        lambda _: ev.create_profits(combo, frozen, frozen_var, [entry_1, entry_2]),
     )
     entry_2.bind(
-        "<FocusOut>", lambda _: ev.create_profits(combo, frozen, frozen_var, [entry_1, entry_2])
+        "<FocusOut>",
+        lambda _: ev.create_profits(combo, frozen, frozen_var, [entry_1, entry_2]),
     )
 
     add_button.bind(
-        "<Button-1>", lambda _: ev.add_products_record(combo, [entry_1, entry_2], tree, REGISTER_ID)
+        "<Button-1>",
+        lambda _: ev.add_products_record(combo, [entry_1, entry_2], tree, REGISTER_ID),
     )
 
 
@@ -60,27 +64,34 @@ def spawn_edit_window(root, tree_container, register_id):
     if not ev.check_valid_selection(tree_container["tree"]):
         return
 
-    record_id = tree_container["tree"].item(tree_container["tree"].selection())['text']
-    old_name = tree_container["tree"].item(tree_container["tree"].selection())['values'][0]
-    old_amount = tree_container["tree"].item(tree_container["tree"].selection())['values'][1]
+    record_id = tree_container["tree"].item(tree_container["tree"].selection())["text"]
+    old_name = tree_container["tree"].item(tree_container["tree"].selection())[
+        "values"
+    ][0]
+    old_amount = tree_container["tree"].item(tree_container["tree"].selection())[
+        "values"
+    ][1]
 
     edit_wind = tkinter.Toplevel(root)
     edit_wind.title("Editar registro")
 
     tkinter.Label(edit_wind, text="Nombre anterior: ").grid(row=0, column=1)
-    tkinter.Entry(edit_wind,
-                  textvariable=tkinter.StringVar(edit_wind, value=old_name),
-                  state="readonly").grid(row=0, column=2)
+    tkinter.Entry(
+        edit_wind,
+        textvariable=tkinter.StringVar(edit_wind, value=old_name),
+        state="readonly",
+    ).grid(row=0, column=2)
 
     tkinter.Label(edit_wind, text="Nuevo nombre: ").grid(row=1, column=1)
     new_name = tkinter.Entry(edit_wind)
     new_name.grid(row=1, column=2)
 
     tkinter.Label(edit_wind, text="Old Price: ").grid(row=2, column=1)
-    tkinter.Entry(edit_wind,
-                  textvariable=tkinter.StringVar(edit_wind, value=old_amount),
-                  state="readonly").grid(row=2, column=2)
-
+    tkinter.Entry(
+        edit_wind,
+        textvariable=tkinter.StringVar(edit_wind, value=old_amount),
+        state="readonly",
+    ).grid(row=2, column=2)
 
     tkinter.Label(edit_wind, text="New Price: ").grid(row=3, column=1)
     new_amount = tkinter.Entry(edit_wind)
@@ -89,9 +100,10 @@ def spawn_edit_window(root, tree_container, register_id):
     btn_edit = tkinter.Button(edit_wind, text="Editar")
     btn_edit.bind(
         "<Button-1>",
-        lambda _ : ev.perform_alter_record(
+        lambda _: ev.perform_alter_record(
             edit_wind, tree_container, record_id, [new_name, new_amount], register_id
-        ))
+        ),
+    )
     btn_edit.grid(row=4, column=2, sticky="we")
 
 
@@ -112,16 +124,19 @@ def spawn_add_window(root, tree_container, register_id=None):
     en_amount.pack()
 
     add_button = tkinter.Button(add_window, text="Añadir")
-    add_button.bind("<Button-1>", lambda _: ev.perform_add_record(
-        tree_container, en_name, en_amount, register_id
-    ))
+    add_button.bind(
+        "<Button-1>",
+        lambda _: ev.perform_add_record(
+            tree_container, en_name, en_amount, register_id
+        ),
+    )
     add_button.pack()
 
 
 def show_products(root, assoc_container):
     """Crea una nueva ventana que muestra que productos hay disponibles en la base de datos"""
 
-    fill_query = 'SELECT * FROM products'
+    fill_query = "SELECT * FROM products"
 
     product_wind = tkinter.Toplevel(root)
     product_wind.title("Lista de productos en venta")
@@ -137,9 +152,9 @@ def show_products(root, assoc_container):
     products_tree.column("price", width=90)
     products_tree.grid(row=0, column=0, columnspan=3, sticky="nsew")
 
-    vscroll = tkinter.Scrollbar(product_wind,
-                                orient="vertical",
-                                command=products_tree.yview)
+    vscroll = tkinter.Scrollbar(
+        product_wind, orient="vertical", command=products_tree.yview
+    )
 
     vscroll.grid(row=0, column=4, sticky="ns")
     products_tree.configure(yscrollcommand=vscroll.set)
@@ -153,9 +168,9 @@ def show_products(root, assoc_container):
                 "table": "products",
                 "table_values": ["product_name", "price"],
                 "tree": products_tree,
-                "fill_query": fill_query
-            }
-        )
+                "fill_query": fill_query,
+            },
+        ),
     )
     btn_1.grid(row=1, column=0)
 
@@ -167,11 +182,11 @@ def show_products(root, assoc_container):
                 "table": "products",
                 "table_values": ["product_name", "price"],
                 "tree": products_tree,
-                "fill_query": fill_query
+                "fill_query": fill_query,
             },
             assoc_container,
-            REGISTER_ID
-        )
+            REGISTER_ID,
+        ),
     )
     btn_2.grid(row=1, column=1)
 
@@ -219,29 +234,38 @@ def create_products_container(root):
     """Crea un contenedor para la tabla de ventas de productos"""
     container = {}
 
-    container["fill_query"] = """
+    container[
+        "fill_query"
+    ] = """
     SELECT ps.id, p.product_name, ps.in_product, ps.out_product, ps.profits
     FROM products_sales ps
     JOIN products p ON p.id = ps.product_id
     WHERE ps.register_id = ?
     """
 
-    container["table"] = 'products_sales'
-    container["table_values"] = ['id', 'product_id',
-                                 'in_product', 'out_product', 'profits']
+    container["table"] = "products_sales"
+    container["table_values"] = [
+        "id",
+        "product_id",
+        "in_product",
+        "out_product",
+        "profits",
+    ]
 
     container["frame"] = tkinter.Frame(root)
 
     container["label"] = tkinter.Label(container["frame"], text="Venta de productos")
     container["label"].grid(row=0, column=0, columnspan=4)
 
-    container["tree"] = ttk.Treeview(container["frame"], columns=["product_name", "in_product",
-                                                                  "out_product", "profits"])
+    container["tree"] = ttk.Treeview(
+        container["frame"],
+        columns=["product_name", "in_product", "out_product", "profits"],
+    )
     container["tree"].grid(row=0, column=1, columnspan=4)
 
-    vscroll = tkinter.Scrollbar(container["frame"],
-                                orient="vertical",
-                                command=container["tree"].yview)
+    vscroll = tkinter.Scrollbar(
+        container["frame"], orient="vertical", command=container["tree"].yview
+    )
 
     vscroll.grid(row=1, column=4, sticky="ns")
     container["tree"].configure(yscrollcommand=vscroll.set)
@@ -250,7 +274,9 @@ def create_products_container(root):
 
     container["buttons"].append(tkinter.Button(container["frame"], text="Añadir"))
     container["buttons"].append(tkinter.Button(container["frame"], text="Eliminar"))
-    container["buttons"].append(tkinter.Button(container["frame"], text="Ver productos"))
+    container["buttons"].append(
+        tkinter.Button(container["frame"], text="Ver productos")
+    )
 
     container["buttons"][0].grid(row=2, column=0, sticky="ew")
     container["buttons"][1].grid(row=2, column=1, sticky="ew")
@@ -259,8 +285,9 @@ def create_products_container(root):
     container["buttons"][0].bind(
         "<Button-1>", lambda _: spawn_product_report_window(root, container["tree"])
     )
-    container["buttons"][1].bind("<Button-1>",
-                                      lambda _: ev.erase_record(container, REGISTER_ID))
+    container["buttons"][1].bind(
+        "<Button-1>", lambda _: ev.erase_record(container, REGISTER_ID)
+    )
     container["buttons"][2].bind("<Button-1>", lambda _: show_products(root, container))
 
     setup_products_tree(container["tree"], container["fill_query"])
@@ -271,7 +298,9 @@ def create_products_container(root):
 def create_tree_container(root, frame_text, table, table_values):
     """Crea un contenedor para un arbol simple"""
     container = {}
-    container["fill_query"] = f"""
+    container[
+        "fill_query"
+    ] = f"""
     SELECT {core.comma_separated_string(table_values)} 
     FROM {table}
     WHERE register_id = ?"""
@@ -288,9 +317,7 @@ def create_tree_container(root, frame_text, table, table_values):
     container["tree"].grid(row=0, column=1, columnspan=3)
 
     vscroll = tkinter.Scrollbar(
-        container["frame"],
-        orient="vertical",
-        command=container["tree"].yview
+        container["frame"], orient="vertical", command=container["tree"].yview
     )
 
     vscroll.grid(row=1, column=3, sticky="ns")
@@ -307,15 +334,14 @@ def create_tree_container(root, frame_text, table, table_values):
     container["buttons"][2].grid(row=2, column=2)
 
     container["buttons"][0].bind(
-        "<Button-1>", lambda _: spawn_add_window(root, container, REGISTER_ID
-     ))
+        "<Button-1>", lambda _: spawn_add_window(root, container, REGISTER_ID)
+    )
     container["buttons"][1].bind(
         "<Button-1>", lambda _: ev.erase_record(container, REGISTER_ID)
     )
     container["buttons"][2].bind(
-        "<Button-1>", 
-        lambda _: spawn_edit_window(root, container, REGISTER_ID
-    ))
+        "<Button-1>", lambda _: spawn_edit_window(root, container, REGISTER_ID)
+    )
 
     setup_simple_tree(container["tree"], container["fill_query"])
 
@@ -326,25 +352,27 @@ def entry_point(root):
     """Punto de entrada para el programa"""
     root.title("Expense Tracker")
 
-    machine_container = create_tree_container(root,
-                                              "Premios de maquinas",
-                                              'machine_table',
-                                              ['id', 'machine_name', 'amount'])
-    replenish_container = create_tree_container(root,
-                                                "Reposiciones de maquinas",
-                                                'replenishments',
-                                                ['id', 'machine_name', 'amount'])
-    expenses_container = create_tree_container(root,
-                                               "Gastos",
-                                               'expenses',
-                                               ['id', 'concept', 'amount'])
+    machine_container = create_tree_container(
+        root, "Premios de maquinas", "machine_table", ["id", "machine_name", "amount"]
+    )
+    replenish_container = create_tree_container(
+        root,
+        "Reposiciones de maquinas",
+        "replenishments",
+        ["id", "machine_name", "amount"],
+    )
+    expenses_container = create_tree_container(
+        root, "Gastos", "expenses", ["id", "concept", "amount"]
+    )
 
     products_sales_container = create_products_container(root)
 
     machine_container["frame"].grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
     replenish_container["frame"].grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
     expenses_container["frame"].grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
-    products_sales_container["frame"].grid(row=0, column=2, padx=10, pady=10, sticky="nsew")
+    products_sales_container["frame"].grid(
+        row=0, column=2, padx=10, pady=10, sticky="nsew"
+    )
 
 
 window = tkinter.Tk()

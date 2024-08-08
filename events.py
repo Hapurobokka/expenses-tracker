@@ -25,17 +25,16 @@ def perform_add_record(container, en_name, en_amount, register_id=None):
     except ValueError:
         return
 
-    if container["table"] == 'products':
+    if container["table"] == "products":
+        core.create_record(
+            container["table"], container["table_values"], (record_name, record_amount)
+        )
+    else:
         core.create_record(
             container["table"],
-            container["table_values"],
-            (record_name, record_amount)
+            ["register_id", *container["table_values"][1:]],
+            (register_id, record_name, record_amount),
         )
-    else: core.create_record(
-        container["table"],
-        ['register_id', *container["table_values"][1:]],
-        (register_id, record_name, record_amount)
-    )
 
     core.fill_table(container["tree"], container["fill_query"], register_id)
 
@@ -47,7 +46,7 @@ def check_valid_selection(tree: ttk.Treeview):
     """Revisa si hay un elemento seleccionado en el Treeview pasado como argumento"""
     try:
         selected_item = tree.selection()
-        _ = tree.item(selected_item)['values'][0] # type: ignore
+        _ = tree.item(selected_item)["values"][0]  # type: ignore
     except IndexError:
         return False
 
@@ -59,7 +58,7 @@ def erase_record(container, register_id=None):
     if not check_valid_selection(container["tree"]):
         return
 
-    record_id = container["tree"].item(container["tree"].selection())['text']
+    record_id = container["tree"].item(container["tree"].selection())["text"]
 
     core.delete_record(container["table"], "id", record_id)
     core.fill_table(container["tree"], container["fill_query"], register_id)
@@ -89,11 +88,11 @@ def perform_alter_record(edit_wind, container, record_id, buttons, register_id=N
 def get_profits(combo, fields):
     """Calcula la cantidad de ganancias dependiendo del producto indicado en combo
     y las cantidades iniciales y finales indicadas en fields"""
-    query = 'SELECT price FROM products WHERE product_name = ?'
+    query = "SELECT price FROM products WHERE product_name = ?"
     selected_item = combo.get()
 
     try:
-        price = core.request_data(query, (selected_item, ))[0][0]
+        price = core.request_data(query, (selected_item,))[0][0]
     except IndexError:
         return 0
 
@@ -104,6 +103,7 @@ def get_profits(combo, fields):
         return 0
 
     return (in_product - out_product) * price
+
 
 def create_profits(combo, entry, entry_var, fields):
     """Muestra la cantidad de ingresos que se van a obtener de la venta de
@@ -125,7 +125,7 @@ def add_products_record(combo, fields, tree, register_id):
 
     profits = get_profits(combo, fields)
     product_id = core.request_data(
-        'SELECT id FROM products WHERE product_name = ?', (combo.get(), )
+        "SELECT id FROM products WHERE product_name = ?", (combo.get(),)
     )[0][0]
 
     try:
@@ -135,10 +135,10 @@ def add_products_record(combo, fields, tree, register_id):
         return
 
     core.create_record(
-        'products_sales',
-       ['register_id', 'product_id', 'in_product', 'out_product', 'profits'],
-       (register_id, product_id, in_product, out_product, profits
-    ))
+        "products_sales",
+        ["register_id", "product_id", "in_product", "out_product", "profits"],
+        (register_id, product_id, in_product, out_product, profits),
+    )
 
     query = """
     SELECT ps.id, p.product_name, ps.in_product, ps.out_product, ps.profits
@@ -149,6 +149,7 @@ def add_products_record(combo, fields, tree, register_id):
 
     core.fill_table(tree, query, register_id)
 
+
 def recur_erase_record(container, assoc_container, register_id):
     """
     Elimina una entrada de una 'tabla superior' (una que no posee registros de turno)
@@ -157,7 +158,7 @@ def recur_erase_record(container, assoc_container, register_id):
     if not check_valid_selection(container["tree"]):
         return
 
-    record_id = container["tree"].item(container["tree"].selection())['text']
+    record_id = container["tree"].item(container["tree"].selection())["text"]
 
     core.delete_record(container["table"], "id", record_id)
     core.delete_record(assoc_container["table"], "product_id", record_id)

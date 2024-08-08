@@ -12,7 +12,7 @@ DATABASE = "database.db"
 
 
 def run_query(query, parameters=()) -> sqlite3.Cursor:
-    "Runs a query for the external database"
+    """Runs a query for the external database"""
     with sqlite3.connect(DATABASE) as conn:
         cursor = conn.cursor()
         result = cursor.execute(query, parameters)
@@ -21,7 +21,7 @@ def run_query(query, parameters=()) -> sqlite3.Cursor:
 
 
 def request_data(query, parameters=()):
-    "Queries the database for the solicited information, then returns a list of tuples"
+    """Queries the database for the solicited information, then returns a list of tuples"""
     some_cursor = run_query(query, parameters)
     return some_cursor.fetchall()
 
@@ -33,7 +33,7 @@ def comma_separated_string(lst: list) -> str:
     return values_string
 
 
-def create_values_string(times, char='?'):
+def create_values_string(times, char="?"):
     """
     Devuelve una string que contiene char la cantidad de veces indicada por times
     """
@@ -60,7 +60,7 @@ def create_record(table, table_values, values):
 
 def delete_record(table, key, value):
     """Borra una entrada de una tabla utilizando su ID"""
-    run_query(f'DELETE FROM {table} WHERE {key} = {value}')
+    run_query(f"DELETE FROM {table} WHERE {key} = {value}")
 
 
 def fill_table(tree, query, register_id=None):
@@ -71,7 +71,7 @@ def fill_table(tree, query, register_id=None):
     if register_id is None:
         db_rows = run_query(query)
     else:
-        db_rows = run_query(query, (register_id, ))
+        db_rows = run_query(query, (register_id,))
 
     for row in db_rows:
         tree.insert("", tkinter.END, text=row[0], values=row[1:])
