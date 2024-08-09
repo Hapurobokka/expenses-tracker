@@ -59,7 +59,7 @@ def spawn_product_report_window(root, tree):
     )
 
 
-def spawn_edit_window(root, tree_container, register_id):
+def spawn_edit_window(root, tree_container, register_id=None):
     """Crea una ventana que permite editar una entrada de una tabla"""
     if not ev.check_valid_selection(tree_container["tree"]):
         return
@@ -133,7 +133,7 @@ def spawn_add_window(root, tree_container, register_id=None):
     add_button.pack()
 
 
-def show_products(root, assoc_container):
+def show_products(root: tkinter.Tk, assoc_container):
     """Crea una nueva ventana que muestra que productos hay disponibles en la base de datos"""
 
     fill_query = "SELECT * FROM products"
@@ -152,6 +152,13 @@ def show_products(root, assoc_container):
     products_tree.column("price", width=90)
     products_tree.grid(row=0, column=0, columnspan=3, sticky="nsew")
 
+    product_wind_container = {
+        "table": "products",
+        "table_values": ["id", "product_name", "price"],
+        "tree": products_tree,
+        "fill_query": fill_query,
+    }
+
     vscroll = tkinter.Scrollbar(
         product_wind, orient="vertical", command=products_tree.yview
     )
@@ -162,15 +169,7 @@ def show_products(root, assoc_container):
     btn_1 = tkinter.Button(product_wind, text="Añadir")
     btn_1.bind(
         "<Button-1>",
-        lambda _: spawn_add_window(
-            root,
-            {
-                "table": "products",
-                "table_values": ["product_name", "price"],
-                "tree": products_tree,
-                "fill_query": fill_query,
-            },
-        ),
+        lambda _: spawn_add_window(root, product_wind_container),
     )
     btn_1.grid(row=1, column=0)
 
@@ -178,12 +177,7 @@ def show_products(root, assoc_container):
     btn_2.bind(
         "<Button-1>",
         lambda _: ev.recur_erase_record(
-            {
-                "table": "products",
-                "table_values": ["product_name", "price"],
-                "tree": products_tree,
-                "fill_query": fill_query,
-            },
+            product_wind_container,
             assoc_container,
             REGISTER_ID,
         ),
@@ -191,6 +185,7 @@ def show_products(root, assoc_container):
     btn_2.grid(row=1, column=1)
 
     btn_3 = tkinter.Button(product_wind, text="Editar")
+    btn_3.bind("<Button-1>", lambda _: spawn_edit_window(root, product_wind_container))
     btn_3.grid(row=1, column=2)
 
     core.fill_table(products_tree, fill_query)
@@ -375,6 +370,6 @@ def entry_point(root):
     )
 
 
-window = tkinter.Tk()
+window = tkinter.Tk()  # None
 entry_point(window)
 window.mainloop()

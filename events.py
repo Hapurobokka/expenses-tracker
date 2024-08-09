@@ -27,7 +27,7 @@ def perform_add_record(container, en_name, en_amount, register_id=None):
 
     if container["table"] == "products":
         core.create_record(
-            container["table"], container["table_values"], (record_name, record_amount)
+            container["table"], container["table_values"][1:], (record_name, record_amount)
         )
     else:
         core.create_record(
