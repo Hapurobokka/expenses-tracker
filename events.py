@@ -4,6 +4,7 @@ Eventos para cuando pulsemos un bóton. Odio escribir interfaces gráficas.
 Creado por Hapurobokka
 """
 
+import re
 import tkinter
 from tkinter import ttk
 import core
@@ -27,7 +28,9 @@ def perform_add_record(container, en_name, en_amount, register_id=None):
 
     if container["table"] == "products":
         core.create_record(
-            container["table"], container["table_values"][1:], (record_name, record_amount)
+            container["table"],
+            container["table_values"][1:],
+            (record_name, record_amount),
         )
     else:
         core.create_record(
@@ -36,10 +39,11 @@ def perform_add_record(container, en_name, en_amount, register_id=None):
             (register_id, record_name, record_amount),
         )
 
-    core.fill_table(container["tree"], container["fill_query"], register_id)
+    core.fill_table(container, container["fill_query"], register_id)
 
     en_name.delete(0, tkinter.END)
     en_amount.delete(0, tkinter.END)
+
 
 
 def check_valid_selection(tree: ttk.Treeview):
@@ -61,7 +65,7 @@ def erase_record(container, register_id=None):
     record_id = container["tree"].item(container["tree"].selection())["text"]
 
     core.delete_record(container["table"], "id", record_id)
-    core.fill_table(container["tree"], container["fill_query"], register_id)
+    core.fill_table(container, container["fill_query"], register_id)
 
 
 def perform_alter_record(edit_wind, container, record_id, buttons, register_id=None):
@@ -82,7 +86,7 @@ def perform_alter_record(edit_wind, container, record_id, buttons, register_id=N
     core.run_query(query, (new_name, new_amount, record_id))
     edit_wind.destroy()
 
-    core.fill_table(container["tree"], container["fill_query"], register_id)
+    core.fill_table(container, container["fill_query"], register_id)
 
 
 def get_profits(combo, fields):
@@ -163,5 +167,5 @@ def recur_erase_record(container, assoc_container, register_id):
     core.delete_record(container["table"], "id", record_id)
     core.delete_record(assoc_container["table"], "product_id", record_id)
 
-    core.fill_table(container["tree"], container["fill_query"])
-    core.fill_table(assoc_container["tree"], assoc_container["fill_query"], register_id)
+    core.fill_table(container, container["fill_query"])
+    core.fill_table(assoc_container, assoc_container["fill_query"], register_id)

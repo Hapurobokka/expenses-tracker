@@ -191,38 +191,38 @@ def show_products(root: tkinter.Tk, assoc_container):
     core.fill_table(products_tree, fill_query)
 
 
-def setup_products_tree(tree, fill_query):
+def setup_products_tree(container, fill_query):
     """Coloca el arbol de productos de manera correcta en la ventana"""
-    tree.grid(row=1, column=0)
+    container["tree"].grid(row=1, column=0)
 
-    tree.heading("#0", text="ID", anchor=tkinter.CENTER)
-    tree.heading("product_name", text="Nombre", anchor=tkinter.CENTER)
-    tree.heading("in_product", text="Inicial", anchor=tkinter.CENTER)
-    tree.heading("out_product", text="Final", anchor=tkinter.CENTER)
-    tree.heading("profits", text="Ganancias", anchor=tkinter.CENTER)
+    container["tree"].heading("#0", text="ID", anchor=tkinter.CENTER)
+    container["tree"].heading("product_name", text="Nombre", anchor=tkinter.CENTER)
+    container["tree"].heading("in_product", text="Inicial", anchor=tkinter.CENTER)
+    container["tree"].heading("out_product", text="Final", anchor=tkinter.CENTER)
+    container["tree"].heading("profits", text="Ganancias", anchor=tkinter.CENTER)
 
-    tree.column("#0", width=40)
-    tree.column("product_name", width=200)
-    tree.column("in_product", width=70)
-    tree.column("out_product", width=70)
-    tree.column("profits", width=90)
+    container["tree"].column("#0", width=40)
+    container["tree"].column("product_name", width=200)
+    container["tree"].column("in_product", width=70)
+    container["tree"].column("out_product", width=70)
+    container["tree"].column("profits", width=90)
 
-    core.fill_table(tree, fill_query, REGISTER_ID)
+    core.fill_table(container, fill_query, REGISTER_ID)
 
 
-def setup_simple_tree(tree, fill_query):
+def setup_simple_tree(container, fill_query):
     """Define todos los elementos de un arbol simple"""
-    tree.grid(row=1, column=0, sticky="nsew", columnspan=3)
+    container["tree"].grid(row=1, column=0, sticky="nsew", columnspan=3)
 
-    tree.heading("#0", text="ID", anchor=tkinter.CENTER)
-    tree.heading("name", text="Nombre", anchor=tkinter.CENTER)
-    tree.heading("amount", text="Cantidad", anchor=tkinter.CENTER)
+    container["tree"].heading("#0", text="ID", anchor=tkinter.CENTER)
+    container["tree"].heading("name", text="Nombre", anchor=tkinter.CENTER)
+    container["tree"].heading("amount", text="Cantidad", anchor=tkinter.CENTER)
 
-    tree.column("#0", width=40)
-    tree.column("name", width=75)
-    tree.column("amount", width=90)
+    container["tree"].column("#0", width=40)
+    container["tree"].column("name", width=75)
+    container["tree"].column("amount", width=90)
 
-    core.fill_table(tree, fill_query, REGISTER_ID)
+    core.fill_table(container, fill_query, REGISTER_ID)
 
 
 def create_products_container(root):
@@ -285,12 +285,12 @@ def create_products_container(root):
     )
     container["buttons"][2].bind("<Button-1>", lambda _: show_products(root, container))
 
-    setup_products_tree(container["tree"], container["fill_query"])
+    setup_products_tree(container, container["fill_query"])
 
     return container
 
 
-def create_tree_container(root, frame_text, table, table_values):
+def create_tree_container(root, frame_text, table, table_values, extra_frame):
     """Crea un contenedor para un arbol simple"""
     container = {}
     container[
@@ -338,7 +338,15 @@ def create_tree_container(root, frame_text, table, table_values):
         "<Button-1>", lambda _: spawn_edit_window(root, container, REGISTER_ID)
     )
 
-    setup_simple_tree(container["tree"], container["fill_query"])
+    container["total_var"] = tkinter.StringVar(root, value="0")
+
+    container["total_entry"] = tkinter.Entry(
+        extra_frame,
+        state="readonly",
+        textvariable=container["total_var"],
+    )
+
+    setup_simple_tree(container, container["fill_query"])
 
     return container
 
@@ -347,27 +355,55 @@ def entry_point(root):
     """Punto de entrada para el programa"""
     root.title("Expense Tracker")
 
+    total_expenses_frame = tkinter.Frame(root)
+    total_expenses_frame.grid(row=1, column=1)
+
     machine_container = create_tree_container(
-        root, "Premios de maquinas", "machine_table", ["id", "machine_name", "amount"]
+        root,
+        "Premios de maquinas",
+        "machine_table",
+        ["id", "machine_name", "amount"],
+        total_expenses_frame,
     )
     replenish_container = create_tree_container(
         root,
         "Reposiciones de maquinas",
         "replenishments",
         ["id", "machine_name", "amount"],
+        total_expenses_frame,
     )
     expenses_container = create_tree_container(
-        root, "Gastos", "expenses", ["id", "concept", "amount"]
+        root, "Gastos", "expenses", ["id", "concept", "amount"], total_expenses_frame
     )
 
     products_sales_container = create_products_container(root)
 
     machine_container["frame"].grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
-    replenish_container["frame"].grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
-    expenses_container["frame"].grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
+    replenish_container["frame"].grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
+    expenses_container["frame"].grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
     products_sales_container["frame"].grid(
         row=0, column=2, padx=10, pady=10, sticky="nsew"
     )
+
+    tkinter.Label(
+        total_expenses_frame, text="Maquinas (Premios)", anchor="w", width=19
+    ).grid(row=0, column=0)
+    machine_container["total_entry"].grid(row=0, column=1)
+
+    tkinter.Label(
+        total_expenses_frame, text="Maquinas (Reposiciones)", anchor="w", width=19
+    ).grid(row=1, column=0)
+    replenish_container["total_entry"].grid(row=1, column=1)
+
+    tkinter.Label(
+        total_expenses_frame, text="Gastos miscelaneos", anchor="w", width=19
+    ).grid(row=2, column=0)
+    expenses_container["total_entry"].grid(row=2, column=1)
+
+    tkinter.Label(
+        total_expenses_frame, text="Total", anchor="w", width=19
+    ).grid(row=3, column=0)
+
 
 
 window = tkinter.Tk()  # None
