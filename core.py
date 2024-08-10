@@ -103,10 +103,4 @@ def fill_table(container, register_id=None):
     if container.table == "products" or container.table == "products_sales":
         return
 
-    # container.old_value = update_read_only_entry(
-    #     container.total_entry,
-    #     container.table,
-    #     "amount",
-    #     container.total_var,
-    #     register_id,
-    # )
+    container.update_total_var(register_id)

@@ -4,6 +4,7 @@ Soy un perdedor y volví corriendo a usar clases.
 Por Hapurobokka.
 """
 
+from collections.abc import Collection
 import tkinter as tk
 from tkinter import ttk
 import core
@@ -84,7 +85,7 @@ def spawn_edit_window(container, root, register_id=None):
 class TreeContainer:
     """Clase que contiene un Frame con un Treeview y varios botones para operar con el"""
 
-    def __init__(self, root, frame_text, table, table_values, extra_frame) -> None:
+    def __init__(self, root, frame_text, table, table_values) -> None:
         # Valores que seran usados para hacer queries a la base de datos
         self.root = root
         self.table = table
@@ -102,6 +103,8 @@ class TreeContainer:
         self.frame_label = tk.Label(self.frame, text=frame_text)
         self.frame_label.grid(row=0, column=0, columnspan=3)
 
+        self.total_var = tk.IntVar(root, value=0)
+
         # Creamos el treeview
         self.tree = ttk.Treeview(self.frame, columns=("name", "amount"))
         self.setup_tree(REGISTER_ID)
@@ -116,23 +119,9 @@ class TreeContainer:
         self.setup_buttons(REGISTER_ID)
 
         # Definiendo el valor de la suma total de las columnas de la tabla
-        self.total_var = tk.IntVar(root, value=0)
-        self.old_value = 0
 
-        # Añadiendo un trace para asegurarnos de que el valor de la suma total se actualice
-        # como debería
-        self.total_var.trace_add(
-            "write", lambda *args: self.update_total_expenses(*args)
-        )
-
-        self.total_entry = tk.Entry(
-            extra_frame,
-            state="readonly",
-            textvariable=self.total_var,
-        )
-
-    def setup_tree(self, REGISTER_ID):
-        """Define todos los elementos del Treeview de esta clase"""
+    def setup_tree(self, register_id):
+        """Dispone las columnas y posición del Treeview, además de llenarlo por primera vez"""
         self.tree.grid(row=1, column=0, sticky="nsew", columnspan=3)
 
         self.tree.heading("#0", text="ID", anchor=tk.CENTER)
@@ -143,15 +132,17 @@ class TreeContainer:
         self.tree.column("name", width=75)
         self.tree.column("amount", width=90)
 
-        core.fill_table(self, REGISTER_ID)
+        core.fill_table(self, register_id)
 
     def setup_scrollbar(self):
+        """Coloca una scrollbar en el Treeview del contenedor"""
         vscroll = tk.Scrollbar(self.frame, orient="vertical", command=self.tree.yview)
 
         vscroll.grid(row=1, column=3, sticky="ns")
         self.tree.configure(yscrollcommand=vscroll.set)
 
     def setup_buttons(self, register_id):
+        """Coloca los botones en su sitio y les asigna eventos"""
         self.btn_add.grid(row=2, column=0)
         self.btn_add.bind(
             "<Button-1>", lambda _: spawn_add_window(self, self.root, register_id)
@@ -167,37 +158,111 @@ class TreeContainer:
             "<Button-1>", lambda _: ev.perform_erase_record(self, register_id)
         )
 
+    def update_total_var(self, register_id):
+        self.total_var.set(core.get_total_amount(self.table, "amount", register_id))
+
+
+class TotalsContainer:
+
+    def __init__(
+        self, frame, machine_container, replenish_container, bussiness_container
+    ) -> None:
+        self.frame = frame
+
+        self.machine_container = machine_container
+        self.replenish_container = replenish_container
+        self.bussiness_container = bussiness_container
+
+        # Y definimos nuestro total en un inicio
+        self.total_expenses = tk.IntVar(frame, value=0)
+
+        # Definimos traces para cada uno de estos valores
+        self.add_traces_to_vars()
+
+        self.machine_total = tk.Entry(
+            frame,
+            state="readonly",
+            textvariable=self.machine_container.total_var,
+        )
+        self.replenish_total = tk.Entry(
+            frame,
+            state="readonly",
+            textvariable=self.replenish_container.total_var,
+        )
+        self.bussiness_total = tk.Entry(
+            frame, state="readonly", textvariable=self.bussiness_container
+        )
+
+        self.place_entries()
+
+    def place_entries(self):
+        self.machine_total.grid(row=0, column=1)
+        self.replenish_total.grid(row=1, column=1)
+        self.bussiness_total.grid(row=2, column=1)
+
+    def add_traces_to_vars(self):
+        self.machine_container.total_var.trace_add(
+            "write", lambda *args: self.update_entry(self.machine_container, *args)
+        )
+        self.replenish_container.total_var.trace_add(
+            "write",
+            lambda *args: self.update_total_expenses(self.replenish_container, *args),
+        )
+        self.bussiness_container.total_var.trace_add(
+            "write",
+            lambda *args: self.update_total_expenses(self.bussiness_container, *args),
+        )
+
+    def update_entry(self, entry, *args):
+        entry.config(state="normal")
+
+        entry.config(state="readonly")
+
+        self.update_total_expenses()
+
     def update_total_expenses(self, *args):
-        pass
+        "Actualiza el valor total de los gastos"
+        self.total_expenses.set(
+            self.machine_container.total_var.get()
+            + self.replenish_container.total_var.get()
+            + self.bussiness_container.total_var.get()
+        )
 
 
 def entry_point(root):
+    """Punto de entrada para el programa"""
     root.title("Expense Tracker")
 
     total_expenses_frame = tk.Frame(root)
-    total_expenses_frame.grid(row=1, column=1)
 
     machine_container = TreeContainer(
         root,
         "Premios de maquinas",
         "machine_table",
         ["id", "machine_name", "amount"],
-        total_expenses_frame,
     )
     replenish_container = TreeContainer(
         root,
         "Reposiciones de maquinas",
         "replenishments",
         ["id", "machine_name", "amount"],
-        total_expenses_frame,
     )
     expenses_container = TreeContainer(
-        root, "Gastos", "expenses", ["id", "concept", "amount"], total_expenses_frame
+        root, "Gastos", "expenses", ["id", "concept", "amount"]
+    )
+
+    totals_container = TotalsContainer(
+        total_expenses_frame,
+        machine_container,
+        replenish_container,
+        expenses_container,
     )
 
     machine_container.frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
     replenish_container.frame.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
     expenses_container.frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
+
+    totals_container.frame.grid(row=1, column=1)
 
 
 window = tk.Tk()
