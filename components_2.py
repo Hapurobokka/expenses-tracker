@@ -4,7 +4,6 @@ Soy un perdedor y volví corriendo a usar clases.
 Por Hapurobokka.
 """
 
-from collections.abc import Collection
 import tkinter as tk
 from tkinter import ttk
 import core
@@ -107,7 +106,6 @@ class TreeContainer:
 
         # Creamos el treeview
         self.tree = ttk.Treeview(self.frame, columns=("name", "amount"))
-        self.setup_tree(REGISTER_ID)
 
         self.setup_scrollbar()
 
@@ -193,6 +191,23 @@ class TotalsContainer:
             frame, state="readonly", textvariable=self.bussiness_container.total_var
         )
 
+        tk.Label(self.frame, text="Maquinas (Premios)", anchor="w", width=19).grid(
+            row=0, column=0
+        )
+
+        tk.Label(self.frame, text="Maquinas (Reposiciones)", anchor="w", width=19).grid(
+            row=1, column=0
+        )
+
+        tk.Label(self.frame, text="Gastos miscelaneos", anchor="w", width=19).grid(
+            row=2, column=0
+        )
+
+        tk.Label(self.frame, text="Total", anchor="w", width=19).grid(row=3, column=0)
+        tk.Label(
+            self.frame, textvariable=self.total_expenses, anchor="w", width=19
+        ).grid(row=3, column=1)
+
         self.place_entries()
 
     def place_entries(self):
@@ -202,15 +217,15 @@ class TotalsContainer:
 
     def add_traces_to_vars(self):
         self.machine_container.total_var.trace_add(
-            "write", lambda *args: self.update_entry(self.machine_container, *args)
+            "write", lambda *args: self.update_entry(self.machine_total, *args)
         )
         self.replenish_container.total_var.trace_add(
             "write",
-            lambda *args: self.update_total_expenses(self.replenish_container, *args),
+            lambda *args: self.update_entry(self.replenish_total, *args),
         )
         self.bussiness_container.total_var.trace_add(
             "write",
-            lambda *args: self.update_total_expenses(self.bussiness_container, *args),
+            lambda *args: self.update_entry(self.bussiness_total, *args),
         )
 
     def update_entry(self, entry, *args):
@@ -220,7 +235,7 @@ class TotalsContainer:
 
         self.update_total_expenses()
 
-    def update_total_expenses(self, *args):
+    def update_total_expenses(self):
         "Actualiza el valor total de los gastos"
         self.total_expenses.set(
             self.machine_container.total_var.get()
@@ -257,6 +272,10 @@ def entry_point(root):
         replenish_container,
         expenses_container,
     )
+
+    machine_container.setup_tree(REGISTER_ID)
+    replenish_container.setup_tree(REGISTER_ID)
+    expenses_container.setup_tree(REGISTER_ID)
 
     machine_container.frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
     replenish_container.frame.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
