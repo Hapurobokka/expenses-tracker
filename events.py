@@ -4,7 +4,6 @@ Eventos para cuando pulsemos un bóton. Odio escribir interfaces gráficas.
 Creado por Hapurobokka
 """
 
-import re
 import tkinter
 from tkinter import ttk
 import core
@@ -26,24 +25,23 @@ def perform_add_record(container, en_name, en_amount, register_id=None):
     except ValueError:
         return
 
-    if container["table"] == "products":
+    if container.table == "products":
         core.create_record(
-            container["table"],
-            container["table_values"][1:],
+            container.table,
+            container.table_values[1:],
             (record_name, record_amount),
         )
     else:
         core.create_record(
-            container["table"],
-            ["register_id", *container["table_values"][1:]],
+            container.table,
+            ["register_id", *container.table_values[1:]],
             (register_id, record_name, record_amount),
         )
 
-    core.fill_table(container, container["fill_query"], register_id)
+    core.fill_table(container, register_id)
 
     en_name.delete(0, tkinter.END)
     en_amount.delete(0, tkinter.END)
-
 
 
 def check_valid_selection(tree: ttk.Treeview):
@@ -57,15 +55,15 @@ def check_valid_selection(tree: ttk.Treeview):
     return True
 
 
-def erase_record(container, register_id=None):
+def perform_erase_record(container, register_id=None):
     """Borra una entrada de la lista"""
-    if not check_valid_selection(container["tree"]):
+    if not check_valid_selection(container.tree):
         return
 
-    record_id = container["tree"].item(container["tree"].selection())["text"]
+    record_id = container.tree.item(container.tree.selection())["text"]
 
-    core.delete_record(container["table"], "id", record_id)
-    core.fill_table(container, container["fill_query"], register_id)
+    core.delete_record(container.table, "id", record_id)
+    core.fill_table(container, register_id)
 
 
 def perform_alter_record(edit_wind, container, record_id, buttons, register_id=None):
@@ -79,14 +77,14 @@ def perform_alter_record(edit_wind, container, record_id, buttons, register_id=N
     except ValueError:
         return
 
-    query = f"""UPDATE {container["table"]}
-    SET {container["table_values"][1]} = ?, {container["table_values"][2]} = ? 
+    query = f"""UPDATE {container.table}
+    SET {container.table_values[1]} = ?, {container.table_values[2]} = ? 
     WHERE id = ?"""
 
     core.run_query(query, (new_name, new_amount, record_id))
     edit_wind.destroy()
 
-    core.fill_table(container, container["fill_query"], register_id)
+    core.fill_table(container, register_id)
 
 
 def get_profits(combo, fields):

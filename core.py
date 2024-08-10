@@ -6,8 +6,6 @@ Por Hapurobokka.
 
 import sqlite3
 import tkinter
-
-
 DATABASE = "database.db"
 
 
@@ -70,38 +68,45 @@ def tuples_to_vector(some_tuples):
 
 def get_total_amount(table, selection, register_id):
     query = f"SELECT {selection} FROM {table} WHERE register_id = ?"
+    values = request_data(query, (register_id,))
 
-    return sum(tuples_to_vector(request_data(query, (register_id,))))
+    if not values:
+        return 0
+
+    return sum(tuples_to_vector(values))
 
 
 def update_read_only_entry(entry, table, selection, ctrl_var, register_id):
+    old_value = ctrl_var.get()
     new_value = get_total_amount(table, selection, register_id)
 
     entry.config(state="normal")
     ctrl_var.set(new_value)
     entry.config(state="readonly")
 
+    return old_value
 
-def fill_table(container, query, register_id=None):
+
+def fill_table(container, register_id=None):
     """Queries the database for data and writes in on a treeview"""
-    for element in container["tree"].get_children():
-        container["tree"].delete(element)
+    for element in container.tree.get_children():
+        container.tree.delete(element)
 
     if register_id is None:
-        db_rows = run_query(query)
+        db_rows = run_query(container.fill_query)
     else:
-        db_rows = run_query(query, (register_id,))
+        db_rows = run_query(container.fill_query, (register_id,))
 
     for row in db_rows:
-        container["tree"].insert("", tkinter.END, text=row[0], values=row[1:])
+        container.tree.insert("", tkinter.END, text=row[0], values=row[1:])
 
-    if container["table"] == "products" or container["table"] == "products_sales":
+    if container.table == "products" or container.table == "products_sales":
         return
 
-    update_read_only_entry(
-        container["total_entry"],
-        container["table"],
-        "amount",
-        container["total_var"],
-        register_id,
-    )
+    # container.old_value = update_read_only_entry(
+    #     container.total_entry,
+    #     container.table,
+    #     "amount",
+    #     container.total_var,
+    #     register_id,
+    # )
