@@ -190,7 +190,7 @@ class TotalsContainer:
             textvariable=self.replenish_container.total_var,
         )
         self.bussiness_total = tk.Entry(
-            frame, state="readonly", textvariable=self.bussiness_container
+            frame, state="readonly", textvariable=self.bussiness_container.total_var
         )
 
         self.place_entries()
