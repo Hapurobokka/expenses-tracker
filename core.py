@@ -76,17 +76,6 @@ def get_total_amount(table, selection, register_id):
     return sum(tuples_to_vector(values))
 
 
-def update_read_only_entry(entry, table, selection, ctrl_var, register_id):
-    old_value = ctrl_var.get()
-    new_value = get_total_amount(table, selection, register_id)
-
-    entry.config(state="normal")
-    ctrl_var.set(new_value)
-    entry.config(state="readonly")
-
-    return old_value
-
-
 def fill_table(container, register_id=None):
     """Queries the database for data and writes in on a treeview"""
     for element in container.tree.get_children():

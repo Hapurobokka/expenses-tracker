@@ -4,9 +4,13 @@ Eventos para cuando pulsemos un bóton. Odio escribir interfaces gráficas.
 Creado por Hapurobokka
 """
 
-import tkinter
+import tkinter as tk
 from tkinter import ttk
+from dataclasses import dataclass
 import core
+
+
+REGISTER_ID = 10
 
 
 def validate_fields(fields: list):
@@ -40,8 +44,8 @@ def perform_add_record(container, en_name, en_amount, register_id=None):
 
     core.fill_table(container, register_id)
 
-    en_name.delete(0, tkinter.END)
-    en_amount.delete(0, tkinter.END)
+    en_name.delete(0, tk.END)
+    en_amount.delete(0, tk.END)
 
 
 def check_valid_selection(tree: ttk.Treeview):
@@ -120,7 +124,7 @@ def create_profits(combo, entry, entry_var, fields):
     entry.config(state="readonly")
 
 
-def add_products_record(combo, fields, tree, register_id):
+def add_products_record(combo, fields, container, register_id):
     """Añade una entrada a la tabla de ventas de productos"""
     if not validate_fields([combo.get(), fields[0].get(), fields[1].get()]):
         return
@@ -142,14 +146,54 @@ def add_products_record(combo, fields, tree, register_id):
         (register_id, product_id, in_product, out_product, profits),
     )
 
-    query = """
-    SELECT ps.id, p.product_name, ps.in_product, ps.out_product, ps.profits
-    FROM products_sales ps
-    JOIN products p ON p.id = ps.product_id
-    WHERE ps.register_id = ?
-    """
+    core.fill_table(container, register_id)
 
-    core.fill_table(tree, query, register_id)
+
+def spawn_product_report_window(container, root, register_id):
+    """Crea la ventana que permite añadir un reporte de ventas de un producto"""
+    query = "SELECT product_name FROM products"
+
+    new_win = tk.Toplevel(root)
+
+    tk.Label(new_win, text="Producto").grid(row=0, column=0)
+    tk.Label(new_win, text="Entrada").grid(row=0, column=1)
+    tk.Label(new_win, text="Salida").grid(row=0, column=2)
+    tk.Label(new_win, text="Ingresos").grid(row=0, column=3)
+
+    combo = ttk.Combobox(new_win, values=[i[0] for i in core.request_data(query)])
+    combo.grid(row=1, column=0)
+
+    entry_1 = tk.Entry(new_win)
+    entry_1.grid(row=1, column=1)
+    entry_2 = tk.Entry(new_win)
+    entry_2.grid(row=1, column=2)
+
+    frozen_var = tk.StringVar(new_win, value="0")
+    frozen = tk.Entry(new_win, textvariable=frozen_var, state="readonly")
+    frozen.grid(row=1, column=3)
+
+    add_button = tk.Button(new_win, text="Añadir")
+    add_button.grid(row=3, column=1, sticky="ew", columnspan=2, pady=10)
+
+    combo.bind(
+        "<FocusOut>",
+        lambda _: create_profits(combo, frozen, frozen_var, [entry_1, entry_2]),
+    )
+    entry_1.bind(
+        "<FocusOut>",
+        lambda _: create_profits(combo, frozen, frozen_var, [entry_1, entry_2]),
+    )
+    entry_2.bind(
+        "<FocusOut>",
+        lambda _: create_profits(combo, frozen, frozen_var, [entry_1, entry_2]),
+    )
+
+    add_button.bind(
+        "<Button-1>",
+        lambda _: add_products_record(
+            combo, [entry_1, entry_2], container, register_id
+        ),
+    )
 
 
 def recur_erase_record(container, assoc_container, register_id):
@@ -157,13 +201,142 @@ def recur_erase_record(container, assoc_container, register_id):
     Elimina una entrada de una 'tabla superior' (una que no posee registros de turno)
     y todas sus entradas de forma recursiva de otras tablas
     """
-    if not check_valid_selection(container["tree"]):
+    if not check_valid_selection(container.tree):
         return
 
-    record_id = container["tree"].item(container["tree"].selection())["text"]
+    record_id = container.tree.item(container.tree.selection())["text"]
 
-    core.delete_record(container["table"], "id", record_id)
-    core.delete_record(assoc_container["table"], "product_id", record_id)
+    core.delete_record(container.table, "id", record_id)
+    core.delete_record(assoc_container.table, "product_id", record_id)
 
-    core.fill_table(container, container["fill_query"])
-    core.fill_table(assoc_container, assoc_container["fill_query"], register_id)
+    core.fill_table(container)
+    core.fill_table(assoc_container, register_id)
+
+
+def spawn_add_window(container, root, register_id=None):
+    """Crea una ventana que le pide al usuario los datos para añadir un dato a una tabla"""
+    add_window = tk.Toplevel(root)
+    add_window.title("Crear nuevo registro")
+
+    tk.Label(add_window, text="Nombre").pack()
+
+    en_name = tk.Entry(add_window)
+    en_name.focus()
+    en_name.pack()
+
+    tk.Label(add_window, text="Cantidad").pack()
+
+    en_amount = tk.Entry(add_window)
+    en_amount.pack()
+
+    add_button = tk.Button(add_window, text="Añadir")
+    add_button.bind(
+        "<Button-1>",
+        lambda _: perform_add_record(container, en_name, en_amount, register_id),
+    )
+    add_button.pack()
+
+
+def spawn_edit_window(container, root, register_id=None):
+    """Crea una ventana que permite editar una entrada de una tabla"""
+    if not check_valid_selection(container.tree):
+        return
+
+    record_id = container.tree.item(container.tree.selection())["text"]
+    old_name = container.tree.item(container.tree.selection())["values"][0]
+    old_amount = container.tree.item(container.tree.selection())["values"][1]
+
+    edit_wind = tk.Toplevel(root)
+    edit_wind.title("Editar registro")
+
+    tk.Label(edit_wind, text="Nombre anterior: ").grid(row=0, column=1)
+    tk.Entry(
+        edit_wind,
+        textvariable=tk.StringVar(edit_wind, value=old_name),
+        state="readonly",
+    ).grid(row=0, column=2)
+
+    tk.Label(edit_wind, text="Nuevo nombre: ").grid(row=1, column=1)
+    new_name = tk.Entry(edit_wind)
+    new_name.grid(row=1, column=2)
+
+    tk.Label(edit_wind, text="Old Price: ").grid(row=2, column=1)
+    tk.Entry(
+        edit_wind,
+        textvariable=tk.StringVar(edit_wind, value=old_amount),
+        state="readonly",
+    ).grid(row=2, column=2)
+
+    tk.Label(edit_wind, text="New Price: ").grid(row=3, column=1)
+    new_amount = tk.Entry(edit_wind)
+    new_amount.grid(row=3, column=2)
+
+    btn_edit = tk.Button(edit_wind, text="Editar")
+    btn_edit.bind(
+        "<Button-1>",
+        lambda _: perform_alter_record(
+            edit_wind, container, record_id, [new_name, new_amount], register_id
+        ),
+    )
+    btn_edit.grid(row=4, column=2, sticky="we")
+
+
+def show_products(assoc_container, root: tk.Tk):
+    """Crea una nueva ventana que muestra que productos hay disponibles en la base de datos"""
+
+    @dataclass
+    class ProductWindContainer:
+        table: str
+        table_values: list[str]
+        tree: ttk.Treeview
+        fill_query: str
+
+    product_wind = tk.Toplevel(root)
+    product_wind.title("Lista de productos en venta")
+
+    product_wind_container = ProductWindContainer(
+        "products",
+        ["id", "product_name", "price"],
+        ttk.Treeview(product_wind, columns=["name", "price"]),
+        "SELECT * FROM products",
+    )
+
+    product_wind_container.tree.heading("#0", text="ID", anchor=tk.CENTER)
+    product_wind_container.tree.heading("name", text="Nombre", anchor=tk.CENTER)
+    product_wind_container.tree.heading("price", text="Precio", anchor=tk.CENTER)
+
+    product_wind_container.tree.column("#0", width=40)
+    product_wind_container.tree.column("name", width=75)
+    product_wind_container.tree.column("price", width=90)
+    product_wind_container.tree.grid(row=0, column=0, columnspan=3, sticky="nsew")
+
+    vscroll = tk.Scrollbar(
+        product_wind, orient="vertical", command=product_wind_container.tree.yview
+    )
+
+    vscroll.grid(row=0, column=4, sticky="ns")
+    product_wind_container.tree.configure(yscrollcommand=vscroll.set)
+
+    btn_1 = tk.Button(product_wind, text="Añadir")
+    btn_1.bind(
+        "<Button-1>",
+        lambda _: spawn_add_window(root, product_wind_container),
+    )
+    btn_1.grid(row=1, column=0)
+
+    btn_2 = tk.Button(product_wind, text="Borrar")
+    btn_2.bind(
+        "<Button-1>",
+        lambda _: recur_erase_record(
+            product_wind_container,
+            assoc_container,
+            REGISTER_ID,
+        ),
+    )
+    btn_2.grid(row=1, column=1)
+
+    btn_3 = tk.Button(product_wind, text="Editar")
+    btn_3.bind("<Button-1>", lambda _: spawn_edit_window(root, product_wind_container))
+    btn_3.grid(row=1, column=2)
+
+    core.fill_table(product_wind_container)
