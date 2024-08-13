@@ -6,6 +6,7 @@ Por Hapurobokka.
 
 import sqlite3
 import tkinter
+
 DATABASE = "database.db"
 
 
@@ -76,7 +77,7 @@ def get_total_amount(table, selection, register_id):
     return sum(tuples_to_vector(values))
 
 
-def fill_table(container, register_id=None):
+def fill_table(container, register_id: int = None):
     """Queries the database for data and writes in on a treeview"""
     for element in container.tree.get_children():
         container.tree.delete(element)
@@ -89,7 +90,7 @@ def fill_table(container, register_id=None):
     for row in db_rows:
         container.tree.insert("", tkinter.END, text=row[0], values=row[1:])
 
-    if container.table == "products" or container.table == "products_sales":
+    if container.table == "products":
         return
 
     container.update_total_var(register_id)

@@ -1,5 +1,5 @@
 """
-Soy un perdedor y volví corriendo a usar clases.
+Archivo principal del programa de momento. Ahora usamos clases como una persona normal.
 
 Por Hapurobokka.
 """
@@ -144,17 +144,26 @@ class ProductsContainer(TreeContainer):
             "<Button-1>", lambda _: ev.perform_erase_record(self, register_id)
         )
 
+    def update_total_var(self, register_id):
+        self.total_var.set(core.get_total_amount(self.table, "profits", register_id))
+
 
 class TotalsContainer:
 
     def __init__(
-        self, frame, machine_container, replenish_container, bussiness_container
+        self,
+        frame: tk.Frame,
+        machine_container: TreeContainer,
+        replenish_container: TreeContainer,
+        bussiness_container: TreeContainer,
+        products_container: ProductsContainer,
     ) -> None:
         self.frame = frame
 
         self.machine_container = machine_container
         self.replenish_container = replenish_container
         self.bussiness_container = bussiness_container
+        self.products_container = products_container
 
         # Y definimos nuestro total en un inicio
         self.total_expenses = tk.IntVar(frame, value=0)
@@ -176,29 +185,62 @@ class TotalsContainer:
             frame, state="readonly", textvariable=self.bussiness_container.total_var
         )
 
-        tk.Label(self.frame, text="Maquinas (Premios)", anchor="w", width=19).grid(
-            row=0, column=0
+        self.products_total = tk.Entry(
+            frame,
+            state="readonly",
+            textvariable=self.products_container.total_var,
         )
 
-        tk.Label(self.frame, text="Maquinas (Reposiciones)", anchor="w", width=19).grid(
+        self.initial_fund = tk.Entry(frame)
+        self.additional_fund = tk.Entry(frame)
+
+        self.place_expenses()
+        self.place_profits()
+
+    def place_expenses(self):
+        tk.Label(self.frame, text="Gastos", anchor="center", width=19).grid(
+            row=0, column=0, columnspan=2
+        )
+
+        tk.Label(self.frame, text="Maquinas (Premios)", anchor="w", width=19).grid(
             row=1, column=0
         )
 
-        tk.Label(self.frame, text="Gastos miscelaneos", anchor="w", width=19).grid(
+        tk.Label(self.frame, text="Maquinas (Reposiciones)", anchor="w", width=19).grid(
             row=2, column=0
         )
 
-        tk.Label(self.frame, text="Total", anchor="w", width=19).grid(row=3, column=0)
+        tk.Label(self.frame, text="Gastos miscelaneos", anchor="w", width=19).grid(
+            row=3, column=0
+        )
+
+        tk.Label(self.frame, text="Total", anchor="w", width=19).grid(row=4, column=0)
         tk.Label(
             self.frame, textvariable=self.total_expenses, anchor="w", width=19
-        ).grid(row=3, column=1)
+        ).grid(row=4, column=1)
+        self.machine_total.grid(row=1, column=1)
+        self.replenish_total.grid(row=2, column=1)
+        self.bussiness_total.grid(row=3, column=1)
 
-        self.place_entries()
+    def place_profits(self):
+        tk.Label(self.frame, text="Ingresos", anchor="center", width=19).grid(
+            row=0, column=2, columnspan=2
+        )
 
-    def place_entries(self):
-        self.machine_total.grid(row=0, column=1)
-        self.replenish_total.grid(row=1, column=1)
-        self.bussiness_total.grid(row=2, column=1)
+        tk.Label(self.frame, text="Ventas de productos", anchor="w", width=19).grid(
+            row=1, column=2
+        )
+        self.products_total.grid(row=1, column=3)
+
+        tk.Label(self.frame, text="Fondo inicial", anchor="w", width=19).grid(
+            row=2, column=2
+        )
+        self.initial_fund.grid(row=2, column=3)
+
+        tk.Label(self.frame, text="Fondos adicionales", anchor="w", width=19).grid(
+            row=3, column=2
+        )
+        self.additional_fund.grid(row=3, column=3)
 
     def add_traces_to_vars(self):
         self.machine_container.total_var.trace_add(
@@ -212,11 +254,17 @@ class TotalsContainer:
             "write",
             lambda *args: self.update_entry(self.bussiness_total, *args),
         )
+        self.products_container.total_var.trace_add(
+            "write", lambda *args: self.update_entry(self.products_total, *args)
+        )
 
     def update_entry(self, entry, *args):
         entry.config(state="normal")
 
         entry.config(state="readonly")
+
+        if entry == self.products_total:
+            pass
 
         self.update_total_expenses()
 
@@ -263,6 +311,7 @@ def entry_point(root):
         machine_container,
         replenish_container,
         bussiness_container,
+        products_container,
     )
 
     machine_container.setup_tree(REGISTER_ID)

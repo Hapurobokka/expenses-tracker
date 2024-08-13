@@ -13,9 +13,17 @@ import core
 REGISTER_ID = 10
 
 
+@dataclass
+class SimpleContainer:
+    table: str
+    table_values: list[str]
+    tree: ttk.Treeview
+    fill_query: str
+
+
 def validate_fields(fields: list):
     """Valida que todos los elementos de la lista tengan una longitud diferente a 0"""
-    return all(lambda x: len(x) != 0 for x in fields)
+    return all(len(x) != 0 for x in fields)
 
 
 def perform_add_record(container, en_name, en_amount, register_id=None):
@@ -283,18 +291,10 @@ def spawn_edit_window(container, root, register_id=None):
 
 def show_products(assoc_container, root: tk.Tk):
     """Crea una nueva ventana que muestra que productos hay disponibles en la base de datos"""
-
-    @dataclass
-    class ProductWindContainer:
-        table: str
-        table_values: list[str]
-        tree: ttk.Treeview
-        fill_query: str
-
     product_wind = tk.Toplevel(root)
     product_wind.title("Lista de productos en venta")
 
-    product_wind_container = ProductWindContainer(
+    product_wind_container = SimpleContainer(
         "products",
         ["id", "product_name", "price"],
         ttk.Treeview(product_wind, columns=["name", "price"]),
@@ -320,7 +320,7 @@ def show_products(assoc_container, root: tk.Tk):
     btn_1 = tk.Button(product_wind, text="Añadir")
     btn_1.bind(
         "<Button-1>",
-        lambda _: spawn_add_window(root, product_wind_container),
+        lambda _: spawn_add_window(product_wind_container, root),
     )
     btn_1.grid(row=1, column=0)
 
