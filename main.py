@@ -167,6 +167,9 @@ class TotalsContainer:
 
         # Y definimos nuestro total en un inicio
         self.total_expenses = tk.IntVar(frame, value=0)
+        self.total_profits = tk.IntVar(frame, value=0)
+
+        vcmd = (frame.register(ev.validate_number_input), "%d", "%P")
 
         # Definimos traces para cada uno de estos valores
         self.add_traces_to_vars()
@@ -190,9 +193,6 @@ class TotalsContainer:
             state="readonly",
             textvariable=self.products_container.total_var,
         )
-
-        self.initial_fund = tk.Entry(frame)
-        self.additional_fund = tk.Entry(frame)
 
         self.place_expenses()
         self.place_profits()
@@ -235,12 +235,25 @@ class TotalsContainer:
         tk.Label(self.frame, text="Fondo inicial", anchor="w", width=19).grid(
             row=2, column=2
         )
+        self.initial_fund = tk.Entry(self.frame)
+        self.initial_fund.bind(
+            "<KeyRelease>", lambda *args: self.update_total_profits(*args)
+        )
         self.initial_fund.grid(row=2, column=3)
 
         tk.Label(self.frame, text="Fondos adicionales", anchor="w", width=19).grid(
             row=3, column=2
         )
+        self.additional_fund = tk.Entry(self.frame)
+        self.additional_fund.bind(
+            "<KeyRelease>", lambda *args: self.update_total_profits(*args)
+        )
         self.additional_fund.grid(row=3, column=3)
+
+        tk.Label(self.frame, text="Total", anchor="w", width=19).grid(row=4, column=2)
+        tk.Label(
+            self.frame, textvariable=self.total_profits, anchor="w", width=19
+        ).grid(row=4, column=3)
 
     def add_traces_to_vars(self):
         self.machine_container.total_var.trace_add(
@@ -255,16 +268,30 @@ class TotalsContainer:
             lambda *args: self.update_entry(self.bussiness_total, *args),
         )
         self.products_container.total_var.trace_add(
-            "write", lambda *args: self.update_entry(self.products_total, *args)
+            "write", lambda *args: self.update_total_profits(*args)
         )
+
+    def update_total_profits(self, *args):
+        try:
+            initial_funds = int(self.initial_fund.get())
+        except ValueError:
+            initial_funds = 0
+
+        try:
+            additional_funds = int(self.additional_fund.get())
+        except ValueError:
+            additional_funds = 0
+
+        self.total_profits.set(
+            self.products_container.total_var.get() + initial_funds + additional_funds
+        )
+
+        self.update_entry(self.products_total)
 
     def update_entry(self, entry, *args):
         entry.config(state="normal")
 
         entry.config(state="readonly")
-
-        if entry == self.products_total:
-            pass
 
         self.update_total_expenses()
 

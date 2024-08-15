@@ -21,6 +21,13 @@ class SimpleContainer:
     fill_query: str
 
 
+def validate_number_input(action, value_if_allowed):
+    if value_if_allowed.isdigit():
+        return True
+
+    return False
+
+
 def validate_fields(fields: list):
     """Valida que todos los elementos de la lista tengan una longitud diferente a 0"""
     return all(len(x) != 0 for x in fields)
