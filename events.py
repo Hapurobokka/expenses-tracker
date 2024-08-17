@@ -15,6 +15,7 @@ REGISTER_ID = 10
 
 @dataclass
 class SimpleContainer:
+    root_win: tk.Tk
     table: str
     table_values: list[str]
     tree: ttk.Treeview
@@ -302,6 +303,7 @@ def show_products(assoc_container, root: tk.Tk):
     product_wind.title("Lista de productos en venta")
 
     product_wind_container = SimpleContainer(
+        product_wind,
         "products",
         ["id", "product_name", "price"],
         ttk.Treeview(product_wind, columns=["name", "price"]),
