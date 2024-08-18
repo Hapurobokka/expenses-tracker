@@ -93,6 +93,10 @@ class TreeContainer:
 
 
 class ProductsContainer(TreeContainer):
+    """
+    El contenedor simple adaptado para mostrar ventas de productos.
+    No recomendaria crear varios de estos.
+    """
 
     def __init__(self, root, frame_text, table, table_values) -> None:
         super().__init__(root, frame_text, table, table_values)
@@ -149,6 +153,7 @@ class ProductsContainer(TreeContainer):
 
 
 class TotalsContainer:
+    """Contiene las sumas totales de varios valores de las tablas"""
 
     def __init__(
         self,
@@ -166,30 +171,31 @@ class TotalsContainer:
         # Y definimos nuestro total en un inicio
         self.total_expenses = tk.IntVar(frame, value=0)
         self.total_profits = tk.IntVar(frame, value=0)
+        self.expected_funds = tk.IntVar(frame, value=0)
+        self.balance = tk.IntVar(frame, value=0)
+        self.difference = tk.IntVar(frame, value=0)
 
         # Definimos traces para cada uno de estos valores
         self.add_traces_to_vars()
 
         self.expenses_label = tk.LabelFrame(frame, text="Gastos")
-        self.expenses_label.grid(row=0, column=0, padx=5)
-
         self.profits_label = tk.LabelFrame(frame, text="Ingresos")
-        self.profits_label.grid(row=0, column=1, padx=5)
+        self.report_label = tk.LabelFrame(frame, text="Reporte de turno")
 
         self.machine_total = tk.Entry(
-            self.expenses_label,    
+            self.expenses_label,
             state="readonly",
             textvariable=self.machine_container.total_var,
             width=10,
         )
         self.replenish_total = tk.Entry(
-            self.expenses_label,    
+            self.expenses_label,
             state="readonly",
             textvariable=self.replenish_container.total_var,
             width=10,
         )
         self.bussiness_total = tk.Entry(
-            self.expenses_label,    
+            self.expenses_label,
             state="readonly",
             textvariable=self.bussiness_container.total_var,
             width=10,
@@ -202,28 +208,54 @@ class TotalsContainer:
             width=10,
         )
 
+        self.display_expected_funds = tk.Entry(
+            self.report_label,
+            state="readonly",
+            textvariable=self.expected_funds,
+            width=10,
+        )
+
+        self.display_reported_funds = tk.Entry(self.report_label, width=10)
+
+        self.display_difference = tk.Entry(
+            self.report_label,
+            state="readonly",
+            textvariable=self.difference,
+            width=10,
+        )
+
+        self.display_balance = tk.Entry(
+            self.report_label,
+            state="readonly",
+            textvariable=self.balance,
+            width=10,
+        )
+
         self.initial_fund = tk.Entry(self.profits_label, width=10)
         self.additional_fund = tk.Entry(self.profits_label, width=10)
 
-
         self.place_expenses()
         self.place_profits()
+        self.place_report()
 
     def place_expenses(self):
+        self.expenses_label.grid(row=0, column=0, padx=5)
 
-        tk.Label(self.expenses_label, text="Maquinas (Premios)", anchor="w", width=19).grid(
-            row=1, column=0
+        tk.Label(
+            self.expenses_label, text="Maquinas (Premios)", anchor="w", width=19
+        ).grid(row=1, column=0)
+
+        tk.Label(
+            self.expenses_label, text="Maquinas (Reposiciones)", anchor="w", width=19
+        ).grid(row=2, column=0)
+
+        tk.Label(
+            self.expenses_label, text="Gastos miscelaneos", anchor="w", width=19
+        ).grid(row=3, column=0)
+
+        tk.Label(self.expenses_label, text="Total", anchor="w", width=19).grid(
+            row=4, column=0
         )
-
-        tk.Label(self.expenses_label, text="Maquinas (Reposiciones)", anchor="w", width=19).grid(
-            row=2, column=0
-        )
-
-        tk.Label(self.expenses_label, text="Gastos miscelaneos", anchor="w", width=19).grid(
-            row=3, column=0
-        )
-
-        tk.Label(self.expenses_label, text="Total", anchor="w", width=19).grid(row=4, column=0)
 
         tk.Label(
             self.expenses_label, textvariable=self.total_expenses, anchor="w", width=10
@@ -234,7 +266,9 @@ class TotalsContainer:
         self.bussiness_total.grid(row=3, column=1)
 
     def place_profits(self):
-        tk.Label(self.profits_label, text="Fondo inicial", anchor="w", width=19).grid(
+        self.profits_label.grid(row=0, column=1, padx=5)
+
+        tk.Label(self.profits_label, text="Fondo inicial", anchor="w", width=16).grid(
             row=1, column=0
         )
         self.initial_fund.bind(
@@ -242,34 +276,62 @@ class TotalsContainer:
         )
         self.initial_fund.grid(row=1, column=1)
 
-        tk.Label(self.profits_label, text="Fondos adicionales", anchor="w", width=19).grid(
-            row=2, column=0
-        )
+        tk.Label(
+            self.profits_label, text="Fondos adicionales", anchor="w", width=16
+        ).grid(row=2, column=0)
 
         self.additional_fund.bind(
             "<KeyRelease>", lambda *args: self.update_total_profits(*args)
         )
         self.additional_fund.grid(row=2, column=1)
 
-        tk.Label(self.profits_label, text="Ventas de productos", anchor="w", width=19).grid(
-            row=3, column=0
-        )
+        tk.Label(
+            self.profits_label, text="Ventas de productos", anchor="w", width=16
+        ).grid(row=3, column=0)
         self.products_total.grid(row=3, column=1)
 
-        tk.Label(self.profits_label, text="Total", anchor="w", width=19).grid(row=4, column=0)
+        tk.Label(self.profits_label, text="Total", anchor="w", width=16).grid(
+            row=4, column=0
+        )
         tk.Label(
             self.profits_label, textvariable=self.total_profits, anchor="w", width=10
         ).grid(row=4, column=1)
 
+    def place_report(self):
+        self.report_label.grid(row=0, column=2, padx=5)
+
+        tk.Label(self.report_label, text="Fondo esperado", anchor="w", width=13).grid(
+            row=1, column=0
+        )
+        self.display_expected_funds.grid(row=1, column=1)
+
+        tk.Label(self.report_label, text="Fondo reportado", anchor="w", width=13).grid(
+            row=2, column=0
+        )
+        self.display_reported_funds.grid(row=2, column=1)
+        self.display_reported_funds.bind(
+            "<KeyRelease>", lambda *args: self.update_final_reports(*args)
+        )
+
+        tk.Label(self.report_label, text="Diferencia", anchor="w", width=13).grid(
+            row=3, column=0
+        )
+        self.display_difference.grid(row=3, column=1)
+
+        tk.Label(self.report_label, text="Balance", anchor="w", width=13).grid(
+            row=4, column=0
+        )
+        self.display_balance.grid(row=4, column=1)
+
     def add_traces_to_vars(self):
         self.machine_container.total_var.trace_add(
-            "write", lambda *args: self.update_entry(self.machine_total, *args)
+            "write", lambda *args: self.update_total_expenses(self.machine_total)
         )
         self.replenish_container.total_var.trace_add(
-            "write", lambda *args: self.update_entry(self.replenish_total, *args)
+            "write", lambda *args: self.update_total_expenses(self.replenish_total)
         )
         self.bussiness_container.total_var.trace_add(
-            "write", lambda *args: self.update_entry(self.bussiness_total, *args)
+            "write", lambda *args: self.update_total_expenses(self.bussiness_total)
         )
         self.products_container.total_var.trace_add(
             "write", lambda *args: self.update_total_profits(*args)
@@ -291,21 +353,38 @@ class TotalsContainer:
         )
 
         self.update_entry(self.products_total)
+        self.update_final_reports(initial_funds)
 
-    def update_entry(self, entry, *args):
-        entry.config(state="normal")
-
-        entry.config(state="readonly")
-
-        self.update_total_expenses()
-
-    def update_total_expenses(self):
+    def update_total_expenses(self, entry):
         "Actualiza el valor total de los gastos"
         self.total_expenses.set(
             self.machine_container.total_var.get()
             + self.replenish_container.total_var.get()
             + self.bussiness_container.total_var.get()
         )
+
+        self.update_entry(entry)
+        self.update_final_reports()
+
+    # FIXME: balance no funciona cuando escribimos en el campo del fondo inicial
+    def update_final_reports(self, initial_funds=0, *args):
+        try:
+            reported_funds = int(self.display_reported_funds.get())
+        except ValueError:
+            reported_funds = 0
+
+        self.expected_funds.set(self.total_profits.get() - self.total_expenses.get())
+        self.difference.set(self.expected_funds.get() - reported_funds)
+        self.balance.set(self.expected_funds.get() - initial_funds)
+
+        self.update_entry(self.display_expected_funds)
+        self.update_entry(self.display_difference)
+        self.update_entry(self.display_balance)
+
+    def update_entry(self, entry, *args):
+        entry.config(state="normal")
+
+        entry.config(state="readonly")
 
 
 def entry_point(root):
