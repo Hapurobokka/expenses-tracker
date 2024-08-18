@@ -24,7 +24,7 @@ class TreeContainer:
 
         # Esta query se usara para llenar el treeview que contiene este objeto
         self.fill_query = f"""
-        SELECT {core.comma_separated_string(self.table_values)} 
+        SELECT {core.comma_separated_string(self.table_values)}
         FROM {self.table}
         WHERE register_id = ?"""
 
@@ -37,6 +37,7 @@ class TreeContainer:
         self.total_var = tk.IntVar(root, value=0)
 
         # Creamos el treeview
+        self.tree = ttk.Treeview(self.frame, columns=("name", "amount"))
 
         # Añadiendo y configurando botones
         self.btn_add = tk.Button(self.frame, text="Añadir")
@@ -49,7 +50,6 @@ class TreeContainer:
 
     def setup_tree(self, register_id):
         """Dispone las columnas y posición del Treeview, además de llenarlo por primera vez"""
-        self.tree = ttk.Treeview(self.frame, columns=("name", "amount"))
         self.tree.grid(row=1, column=0, sticky="nsew", columnspan=3)
 
         self.tree.heading("#0", text="ID", anchor=tk.CENTER)
@@ -89,6 +89,7 @@ class TreeContainer:
         )
 
     def update_total_var(self, register_id):
+        """Actualiza el valor de la variable que cuenta el total de la tabla"""
         self.total_var.set(core.get_total_amount(self.table, "amount", register_id))
 
 
@@ -178,6 +179,8 @@ class TotalsContainer:
         # Definimos traces para cada uno de estos valores
         self.add_traces_to_vars()
 
+		# Creamos label_frames para colocar los componentes de la ventana
+		# de reportes
         self.expenses_label = tk.LabelFrame(frame, text="Gastos")
         self.profits_label = tk.LabelFrame(frame, text="Ingresos")
         self.report_label = tk.LabelFrame(frame, text="Reporte de turno")
@@ -239,6 +242,7 @@ class TotalsContainer:
         self.place_report()
 
     def place_expenses(self):
+        """Coloca la sección de gastos en su posición de la ventana principal"""
         self.expenses_label.grid(row=0, column=0, padx=5)
 
         tk.Label(
@@ -266,13 +270,14 @@ class TotalsContainer:
         self.bussiness_total.grid(row=3, column=1)
 
     def place_profits(self):
+        """Coloca la sección de ingresos en su posición de la ventana principal"""
         self.profits_label.grid(row=0, column=1, padx=5)
 
         tk.Label(self.profits_label, text="Fondo inicial", anchor="w", width=16).grid(
             row=1, column=0
         )
         self.initial_fund.bind(
-            "<KeyRelease>", lambda *args: self.update_total_profits(*args)
+            "<KeyRelease>", self.update_total_profits
         )
         self.initial_fund.grid(row=1, column=1)
 
@@ -281,7 +286,7 @@ class TotalsContainer:
         ).grid(row=2, column=0)
 
         self.additional_fund.bind(
-            "<KeyRelease>", lambda *args: self.update_total_profits(*args)
+            "<KeyRelease>", self.update_total_profits
         )
         self.additional_fund.grid(row=2, column=1)
 
@@ -298,6 +303,7 @@ class TotalsContainer:
         ).grid(row=4, column=1)
 
     def place_report(self):
+        """Coloca el frame del reporte en su lugar en la ventana principal"""
         self.report_label.grid(row=0, column=2, padx=5)
 
         tk.Label(self.report_label, text="Fondo esperado", anchor="w", width=13).grid(
@@ -310,7 +316,7 @@ class TotalsContainer:
         )
         self.display_reported_funds.grid(row=2, column=1)
         self.display_reported_funds.bind(
-            "<KeyRelease>", lambda *args: self.update_final_reports(*args)
+            "<KeyRelease>",  self.update_final_reports
         )
 
         tk.Label(self.report_label, text="Diferencia", anchor="w", width=13).grid(
@@ -324,6 +330,7 @@ class TotalsContainer:
         self.display_balance.grid(row=4, column=1)
 
     def add_traces_to_vars(self):
+        """Añade callbacks a distintas variables de TKInter para que se actualicen al toque"""
         self.machine_container.total_var.trace_add(
             "write", lambda *args: self.update_total_expenses(self.machine_total)
         )
@@ -334,26 +341,27 @@ class TotalsContainer:
             "write", lambda *args: self.update_total_expenses(self.bussiness_total)
         )
         self.products_container.total_var.trace_add(
-            "write", lambda *args: self.update_total_profits(*args)
+            "write", self.update_total_profits
         )
 
     def update_total_profits(self, *args):
-        try:
-            initial_funds = int(self.initial_fund.get())
-        except ValueError:
-            initial_funds = 0
-
+        """Actualiza los totales de los ingresos del producto"""
         try:
             additional_funds = int(self.additional_fund.get())
         except ValueError:
             additional_funds = 0
+
+        try:
+            initial_funds = int(self.initial_fund.get())
+        except ValueError:
+            initial_funds = 0
 
         self.total_profits.set(
             self.products_container.total_var.get() + initial_funds + additional_funds
         )
 
         self.update_entry(self.products_total)
-        self.update_final_reports(initial_funds)
+        self.update_final_reports()
 
     def update_total_expenses(self, entry):
         "Actualiza el valor total de los gastos"
@@ -367,14 +375,20 @@ class TotalsContainer:
         self.update_final_reports()
 
     # FIXME: balance no funciona cuando escribimos en el campo del fondo inicial
-    def update_final_reports(self, initial_funds=0, *args):
+    def update_final_reports(self, *args):
+        """Actualiza la sección de reportes finales de la ventana principal"""
         try:
             reported_funds = int(self.display_reported_funds.get())
         except ValueError:
             reported_funds = 0
 
+        try:
+           initial_funds = int(self.initial_fund.get())
+        except ValueError:
+           initial_funds = 0
+
         self.expected_funds.set(self.total_profits.get() - self.total_expenses.get())
-        self.difference.set(self.expected_funds.get() - reported_funds)
+        self.difference.set(reported_funds - self.expected_funds.get() )
         self.balance.set(self.expected_funds.get() - initial_funds)
 
         self.update_entry(self.display_expected_funds)
@@ -382,6 +396,7 @@ class TotalsContainer:
         self.update_entry(self.display_balance)
 
     def update_entry(self, entry, *args):
+        """Actualiza una entrada de solo lectura"""
         entry.config(state="normal")
 
         entry.config(state="readonly")
@@ -440,3 +455,4 @@ def entry_point(root):
 window = tk.Tk()
 entry_point(window)
 window.mainloop()
+
