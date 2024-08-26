@@ -179,8 +179,8 @@ class TotalsContainer:
         # Definimos traces para cada uno de estos valores
         self.add_traces_to_vars()
 
-		# Creamos label_frames para colocar los componentes de la ventana
-		# de reportes
+        # Creamos label_frames para colocar los componentes de la ventana
+        # de reportes
         self.expenses_label = tk.LabelFrame(frame, text="Gastos")
         self.profits_label = tk.LabelFrame(frame, text="Ingresos")
         self.report_label = tk.LabelFrame(frame, text="Reporte de turno")
@@ -276,18 +276,14 @@ class TotalsContainer:
         tk.Label(self.profits_label, text="Fondo inicial", anchor="w", width=16).grid(
             row=1, column=0
         )
-        self.initial_fund.bind(
-            "<KeyRelease>", self.update_total_profits
-        )
+        self.initial_fund.bind("<KeyRelease>", self.update_total_profits)
         self.initial_fund.grid(row=1, column=1)
 
         tk.Label(
             self.profits_label, text="Fondos adicionales", anchor="w", width=16
         ).grid(row=2, column=0)
 
-        self.additional_fund.bind(
-            "<KeyRelease>", self.update_total_profits
-        )
+        self.additional_fund.bind("<KeyRelease>", self.update_total_profits)
         self.additional_fund.grid(row=2, column=1)
 
         tk.Label(
@@ -315,9 +311,7 @@ class TotalsContainer:
             row=2, column=0
         )
         self.display_reported_funds.grid(row=2, column=1)
-        self.display_reported_funds.bind(
-            "<KeyRelease>",  self.update_final_reports
-        )
+        self.display_reported_funds.bind("<KeyRelease>", self.update_final_reports)
 
         tk.Label(self.report_label, text="Diferencia", anchor="w", width=13).grid(
             row=3, column=0
@@ -340,9 +334,7 @@ class TotalsContainer:
         self.bussiness_container.total_var.trace_add(
             "write", lambda *args: self.update_total_expenses(self.bussiness_total)
         )
-        self.products_container.total_var.trace_add(
-            "write", self.update_total_profits
-        )
+        self.products_container.total_var.trace_add("write", self.update_total_profits)
 
     def update_total_profits(self, *args):
         """Actualiza los totales de los ingresos del producto"""
@@ -383,12 +375,12 @@ class TotalsContainer:
             reported_funds = 0
 
         try:
-           initial_funds = int(self.initial_fund.get())
+            initial_funds = int(self.initial_fund.get())
         except ValueError:
-           initial_funds = 0
+            initial_funds = 0
 
         self.expected_funds.set(self.total_profits.get() - self.total_expenses.get())
-        self.difference.set(reported_funds - self.expected_funds.get() )
+        self.difference.set(reported_funds - self.expected_funds.get())
         self.balance.set(self.expected_funds.get() - initial_funds)
 
         self.update_entry(self.display_expected_funds)
@@ -455,4 +447,3 @@ def entry_point(root):
 window = tk.Tk()
 entry_point(window)
 window.mainloop()
-

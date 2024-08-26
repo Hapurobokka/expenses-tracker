@@ -77,7 +77,7 @@ def get_total_amount(table, selection, register_id):
     return sum(tuples_to_vector(values))
 
 
-def fill_table(container, register_id: int = None):
+def fill_table(container, register_id: int|None = None):
     """Queries the database for data and writes in on a treeview"""
     for element in container.tree.get_children():
         container.tree.delete(element)
