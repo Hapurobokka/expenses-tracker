@@ -10,7 +10,7 @@ import core
 import events as ev
 
 
-REGISTER_ID = 10
+REGISTER_ID = 1
 
 
 class TreeContainer:

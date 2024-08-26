@@ -7,7 +7,7 @@ Por Hapurobokka.
 import sqlite3
 import tkinter
 
-DATABASE = "database.db"
+DATABASE = "database.sqlite3"
 
 
 def run_query(query, parameters=()) -> sqlite3.Cursor:
