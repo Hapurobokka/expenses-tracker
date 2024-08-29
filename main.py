@@ -8,9 +8,78 @@ import tkinter as tk
 from tkinter import ttk
 import core
 import events as ev
+from dataclasses import dataclass
 
 
 REGISTER_ID = 1
+
+
+@dataclass
+class LabelEntryPair:
+    label: tk.Label
+    entry: tk.Entry
+
+    def place(self, label_pos, entry_pos):
+        self.label.grid(row=label_pos[0], column=label_pos[1])
+        self.entry.grid(row=entry_pos[0], column=entry_pos[1])
+
+
+@dataclass
+class LabelPair:
+    label1: tk.Label
+    label2: tk.Label
+
+    def place(self, label1_pos, label2_pos):
+        self.label1.grid(row=label1_pos[0], column=label1_pos[1])
+        self.label2.grid(row=label2_pos[0], column=label2_pos[1])
+
+
+class DisplayStack:
+
+    def __init__(self, root, elements, label_width=19, entry_width=10):
+        self.label_frame = tk.LabelFrame(root, text=elements[0])
+        self.stack = []
+
+        for elem in elements[1:]:
+            pair = None
+
+            if elem["type"] == "LabelEntryPair":
+                label = tk.Label(
+                    master=self.label_frame,
+                    text=elem["label_text"],
+                    anchor="w",
+                    width=label_width,
+                )
+
+                entry = tk.Entry(
+                    master=self.label_frame,
+                    state=elem["state"],
+                    textvariable=elem["textvariable"],
+                    width=entry_width,
+                )
+
+                pair = LabelEntryPair(label, entry)
+
+            elif elem["type"] == "LabelPair":
+                label1 = tk.Label(
+                    master=self.label_frame,
+                    text=elem["label_text"],
+                    anchor="w",
+                    width=label_width,
+                )
+
+                label2 = tk.Label(
+                    master=self.label_frame,
+                    textvariable=elem["textvariable"],
+                    anchor="w",
+                    width=entry_width,
+                )
+
+                pair = LabelPair(label1, label2)
+
+            if pair is not None:
+                pair.place(elem["position"][0], elem["position"][1])
+                self.stack.append(pair)
 
 
 class TreeContainer:
@@ -164,6 +233,8 @@ class TotalsContainer:
         bussiness_container: TreeContainer,
         products_container: ProductsContainer,
     ) -> None:
+        self.frame = frame
+
         self.machine_container = machine_container
         self.replenish_container = replenish_container
         self.bussiness_container = bussiness_container
@@ -178,181 +249,159 @@ class TotalsContainer:
 
         # Definimos traces para cada uno de estos valores
         self.add_traces_to_vars()
-
-        # Creamos label_frames para colocar los componentes de la ventana
-        # de reportes
-        self.expenses_label = tk.LabelFrame(frame, text="Gastos")
-        self.profits_label = tk.LabelFrame(frame, text="Ingresos")
-        self.report_label = tk.LabelFrame(frame, text="Reporte de turno")
-
-        self.machine_total = tk.Entry(
-            self.expenses_label,
-            state="readonly",
-            textvariable=self.machine_container.total_var,
-            width=10,
-        )
-        self.replenish_total = tk.Entry(
-            self.expenses_label,
-            state="readonly",
-            textvariable=self.replenish_container.total_var,
-            width=10,
-        )
-        self.bussiness_total = tk.Entry(
-            self.expenses_label,
-            state="readonly",
-            textvariable=self.bussiness_container.total_var,
-            width=10,
-        )
-
-        self.products_total = tk.Entry(
-            self.profits_label,
-            state="readonly",
-            textvariable=self.products_container.total_var,
-            width=10,
-        )
-
-        self.display_expected_funds = tk.Entry(
-            self.report_label,
-            state="readonly",
-            textvariable=self.expected_funds,
-            width=10,
+        
+        self.expenses_stack = DisplayStack(
+            self.frame,
+            [
+                "Gastos",
+                {
+                    "type": "LabelEntryPair",
+                    "label_text": "Maquinas (Premios)",
+                    "state": "readonly",
+                    "textvariable": machine_container.total_var,
+                    "position": [(0, 0), (0, 1)],
+                },
+                {
+                    "type": "LabelEntryPair",
+                    "label_text": "Maquinas (Reposiciones)",
+                    "state": "readonly",
+                    "textvariable": replenish_container.total_var,
+                    "position": [(1, 0), (1, 1)],
+                },
+                {
+                    "type": "LabelEntryPair",
+                    "label_text": "Gastos Miscelaneos",
+                    "state": "readonly",
+                    "textvariable": bussiness_container.total_var,
+                    "position": [(2, 0), (2, 1)],
+                },
+                {
+                    "type": "LabelPair",
+                    "label_text": "Total",
+                    "textvariable": self.total_expenses,
+                    "position": [(3, 0), (3, 1)],
+                },
+            ]
         )
 
-        self.display_reported_funds = tk.Entry(self.report_label, width=10)
-
-        self.display_difference = tk.Entry(
-            self.report_label,
-            state="readonly",
-            textvariable=self.difference,
-            width=10,
+        self.profits_stack = DisplayStack(
+            self.frame,
+            [
+                "Ingresos",
+                {
+                    "type": "LabelEntryPair",
+                    "label_text": "Fondo inicial",
+                    "state": "normal",
+                    "textvariable": 1,
+                    "position": [(0, 0), (0, 1)],
+                },
+                {
+                    "type": "LabelEntryPair",
+                    "label_text": "Fondo adicional",
+                    "state": "normal",
+                    "textvariable": 2,
+                    "position": [(1, 0), (1, 1)],
+                },
+                {
+                    "type": "LabelEntryPair",
+                    "label_text": "Ventas de productos",
+                    "state": "readonly",
+                    "textvariable": products_container.total_var,
+                    "position": [(2, 0), (2, 1)],
+                },
+                {
+                    "type": "LabelPair",
+                    "label_text": "Total",
+                    "textvariable": self.total_profits,
+                    "position": [(3, 0), (3, 1)],
+                },
+            ],
+            label_width=16,
         )
 
-        self.display_balance = tk.Entry(
-            self.report_label,
-            state="readonly",
-            textvariable=self.balance,
-            width=10,
+        self.report_stack = DisplayStack(
+            self.frame,
+            [
+                "Ingresos",
+                {
+                    "type": "LabelEntryPair",
+                    "label_text": "Fondo esperado",
+                    "state": "readonly",
+                    "textvariable": self.expected_funds,
+                    "position": [(0, 0), (0, 1)],
+                },
+                {
+                    "type": "LabelEntryPair",
+                    "label_text": "Fondo reportado",
+                    "state": "normal",
+                    "textvariable": 3,
+                    "position": [(1, 0), (1, 1)],
+                },
+                {
+                    "type": "LabelEntryPair",
+                    "label_text": "Diferencia",
+                    "state": "readonly",
+                    "textvariable": self.difference,
+                    "position": [(2, 0), (2, 1)],
+                },
+                {
+                    "type": "LabelEntryPair",
+                    "label_text": "Balance",
+                    "state": "readonly",
+                    "textvariable": self.balance,
+                    "position": [(3, 0), (3, 1)],
+                },
+            ],
+            label_width=13,
         )
 
-        self.initial_fund = tk.Entry(self.profits_label, width=10)
-        self.additional_fund = tk.Entry(self.profits_label, width=10)
-
-        self.place_expenses()
-        self.place_profits()
-        self.place_report()
-
-    def place_expenses(self):
-        """Coloca la sección de gastos en su posición de la ventana principal"""
-        self.expenses_label.grid(row=0, column=0, padx=5)
-
-        tk.Label(
-            self.expenses_label, text="Maquinas (Premios)", anchor="w", width=19
-        ).grid(row=1, column=0)
-
-        tk.Label(
-            self.expenses_label, text="Maquinas (Reposiciones)", anchor="w", width=19
-        ).grid(row=2, column=0)
-
-        tk.Label(
-            self.expenses_label, text="Gastos miscelaneos", anchor="w", width=19
-        ).grid(row=3, column=0)
-
-        tk.Label(self.expenses_label, text="Total", anchor="w", width=19).grid(
-            row=4, column=0
+        self.profits_stack.stack[0].entry.bind(
+            "<KeyRelease>", self.update_total_profits
         )
-
-        tk.Label(
-            self.expenses_label, textvariable=self.total_expenses, anchor="w", width=10
-        ).grid(row=4, column=1)
-
-        self.machine_total.grid(row=1, column=1)
-        self.replenish_total.grid(row=2, column=1)
-        self.bussiness_total.grid(row=3, column=1)
-
-    def place_profits(self):
-        """Coloca la sección de ingresos en su posición de la ventana principal"""
-        self.profits_label.grid(row=0, column=1, padx=5)
-
-        tk.Label(self.profits_label, text="Fondo inicial", anchor="w", width=16).grid(
-            row=1, column=0
+        self.profits_stack.stack[1].entry.bind(
+            "<KeyRelease>", self.update_total_profits
         )
-        self.initial_fund.bind("<KeyRelease>", self.update_total_profits)
-        self.initial_fund.grid(row=1, column=1)
-
-        tk.Label(
-            self.profits_label, text="Fondos adicionales", anchor="w", width=16
-        ).grid(row=2, column=0)
-
-        self.additional_fund.bind("<KeyRelease>", self.update_total_profits)
-        self.additional_fund.grid(row=2, column=1)
-
-        tk.Label(
-            self.profits_label, text="Ventas de productos", anchor="w", width=16
-        ).grid(row=3, column=0)
-        self.products_total.grid(row=3, column=1)
-
-        tk.Label(self.profits_label, text="Total", anchor="w", width=16).grid(
-            row=4, column=0
-        )
-        tk.Label(
-            self.profits_label, textvariable=self.total_profits, anchor="w", width=10
-        ).grid(row=4, column=1)
-
-    def place_report(self):
-        """Coloca el frame del reporte en su lugar en la ventana principal"""
-        self.report_label.grid(row=0, column=2, padx=5)
-
-        tk.Label(self.report_label, text="Fondo esperado", anchor="w", width=13).grid(
-            row=1, column=0
-        )
-        self.display_expected_funds.grid(row=1, column=1)
-
-        tk.Label(self.report_label, text="Fondo reportado", anchor="w", width=13).grid(
-            row=2, column=0
-        )
-        self.display_reported_funds.grid(row=2, column=1)
-        self.display_reported_funds.bind("<KeyRelease>", self.update_final_reports)
-
-        tk.Label(self.report_label, text="Diferencia", anchor="w", width=13).grid(
-            row=3, column=0
-        )
-        self.display_difference.grid(row=3, column=1)
-
-        tk.Label(self.report_label, text="Balance", anchor="w", width=13).grid(
-            row=4, column=0
-        )
-        self.display_balance.grid(row=4, column=1)
+        self.report_stack.stack[1].entry.bind("<KeyRelease>", self.update_final_reports)
 
     def add_traces_to_vars(self):
         """Añade callbacks a distintas variables de TKInter para que se actualicen al toque"""
         self.machine_container.total_var.trace_add(
-            "write", lambda *args: self.update_total_expenses(self.machine_total)
+            "write",
+            lambda *args: self.update_total_expenses(
+                self.expenses_stack.stack[0].entry
+            ),
         )
         self.replenish_container.total_var.trace_add(
-            "write", lambda *args: self.update_total_expenses(self.replenish_total)
+            "write",
+            lambda *args: self.update_total_expenses(
+                self.expenses_stack.stack[1].entry
+            ),
         )
         self.bussiness_container.total_var.trace_add(
-            "write", lambda *args: self.update_total_expenses(self.bussiness_total)
+            "write",
+            lambda *args: self.update_total_expenses(
+                self.expenses_stack.stack[2].entry
+            ),
         )
         self.products_container.total_var.trace_add("write", self.update_total_profits)
 
     def update_total_profits(self, *args):
         """Actualiza los totales de los ingresos del producto"""
         try:
-            additional_funds = int(self.additional_fund.get())
-        except ValueError:
-            additional_funds = 0
-
-        try:
-            initial_funds = int(self.initial_fund.get())
+            initial_funds = int(self.profits_stack.stack[0].entry.get())
         except ValueError:
             initial_funds = 0
+
+        try:
+            additional_funds = int(self.profits_stack.stack[1].entry.get())
+        except ValueError:
+            additional_funds = 0
 
         self.total_profits.set(
             self.products_container.total_var.get() + initial_funds + additional_funds
         )
 
-        self.update_entry(self.products_total)
+        self.update_entry(self.profits_stack.stack[2].entry)
         self.update_final_reports()
 
     def update_total_expenses(self, entry):
@@ -366,16 +415,15 @@ class TotalsContainer:
         self.update_entry(entry)
         self.update_final_reports()
 
-    # FIXME: balance no funciona cuando escribimos en el campo del fondo inicial
     def update_final_reports(self, *args):
         """Actualiza la sección de reportes finales de la ventana principal"""
         try:
-            reported_funds = int(self.display_reported_funds.get())
+            reported_funds = int(self.report_stack.stack[1].entry.get())
         except ValueError:
             reported_funds = 0
 
         try:
-            initial_funds = int(self.initial_fund.get())
+            initial_funds = int(self.profits_stack.stack[1].entry.get())
         except ValueError:
             initial_funds = 0
 
@@ -383,9 +431,9 @@ class TotalsContainer:
         self.difference.set(reported_funds - self.expected_funds.get())
         self.balance.set(self.expected_funds.get() - initial_funds)
 
-        self.update_entry(self.display_expected_funds)
-        self.update_entry(self.display_difference)
-        self.update_entry(self.display_balance)
+        self.update_entry(self.report_stack.stack[0].entry)
+        self.update_entry(self.report_stack.stack[2].entry)
+        self.update_entry(self.report_stack.stack[3].entry)
 
     def update_entry(self, entry, *args):
         """Actualiza una entrada de solo lectura"""
@@ -441,8 +489,10 @@ def entry_point(root):
     bussiness_container.frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
     products_container.frame.grid(row=0, column=2, padx=10, pady=10, sticky="nsew")
 
-    total_expenses_frame.grid(row=1, column=1, columnspan=2)
-
+    totals_container.frame.grid(row=1, column=1, columnspan=2)
+    totals_container.expenses_stack.label_frame.grid(row=0, column=0, padx=5)
+    totals_container.profits_stack.label_frame.grid(row=0, column=1, padx=5)
+    totals_container.report_stack.label_frame.grid(row=0, column=2, padx=5)
 
 window = tk.Tk()
 entry_point(window)

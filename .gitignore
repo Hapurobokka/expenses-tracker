@@ -9,3 +9,7 @@ components.py
 .vscode/settings.json
 utils/trans.sql
 utils/trans.sql
+tags
+tags
+tests/test.py
+tests/
