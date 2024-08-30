@@ -4,37 +4,27 @@ Eventos para cuando pulsemos un bóton. Odio escribir interfaces gráficas.
 Creado por Hapurobokka
 """
 
+from __future__ import annotations
 import tkinter as tk
 from tkinter import ttk
-from dataclasses import dataclass
+from containers import *
 import core
 
 
-REGISTER_ID = 10
+REGISTER_ID = 1
 
 
-@dataclass
-class SimpleContainer:
-    root_win: tk.Tk
-    table: str
-    table_values: list[str]
-    tree: ttk.Treeview
-    fill_query: str
-
-
-def validate_number_input(action, value_if_allowed):
-    if value_if_allowed.isdigit():
-        return True
-
-    return False
-
-
-def validate_fields(fields: list):
+def validate_fields(fields: list) -> bool:
     """Valida que todos los elementos de la lista tengan una longitud diferente a 0"""
     return all(len(x) != 0 for x in fields)
 
 
-def perform_add_record(container, en_name, en_amount, register_id=None):
+def perform_add_record(
+    container: TreeContainer | SimpleContainer,
+    en_name: tk.Entry,
+    en_amount: tk.Entry,
+    register_id: int | None = None,
+) -> None:
     """Realiza la transacción de añadir un elemento a una tabla"""
     if not validate_fields([en_name.get(), en_amount.get()]):
         return
@@ -64,7 +54,7 @@ def perform_add_record(container, en_name, en_amount, register_id=None):
     en_amount.delete(0, tk.END)
 
 
-def check_valid_selection(tree: ttk.Treeview):
+def check_valid_selection(tree: ttk.Treeview) -> bool:
     """Revisa si hay un elemento seleccionado en el Treeview pasado como argumento"""
     try:
         selected_item = tree.selection()
@@ -75,7 +65,9 @@ def check_valid_selection(tree: ttk.Treeview):
     return True
 
 
-def perform_erase_record(container, register_id=None):
+def perform_erase_record(
+    container: TreeContainer, register_id: int | None = None
+) -> None:
     """Borra una entrada de la lista"""
     if not check_valid_selection(container.tree):
         return
@@ -86,7 +78,13 @@ def perform_erase_record(container, register_id=None):
     core.fill_table(container, register_id)
 
 
-def perform_alter_record(edit_wind, container, record_id, buttons, register_id=None):
+def perform_alter_record(
+    edit_wind: tk.Toplevel,
+    container: TreeContainer | SimpleContainer,
+    record_id: int,
+    buttons: list,
+    register_id: int | None = None,
+) -> None:
     """Realiza la transaccón de editar un elemento en la tabla"""
     if not validate_fields([buttons[0].get(), buttons[1].get()]):
         return
@@ -107,7 +105,7 @@ def perform_alter_record(edit_wind, container, record_id, buttons, register_id=N
     core.fill_table(container, register_id)
 
 
-def get_profits(combo, fields):
+def get_profits(combo: ttk.Combobox, fields: list) -> int:
     """Calcula la cantidad de ganancias dependiendo del producto indicado en combo
     y las cantidades iniciales y finales indicadas en fields"""
     query = "SELECT price FROM products WHERE product_name = ?"
@@ -127,7 +125,9 @@ def get_profits(combo, fields):
     return (in_product - out_product) * price
 
 
-def create_profits(combo, entry, entry_var, fields):
+def create_profits(
+    combo: ttk.Combobox, entry: tk.Entry, entry_var: tk.IntVar, fields: list
+) -> None:
     """Muestra la cantidad de ingresos que se van a obtener de la venta de
     cierta cantidad de productos"""
     if not validate_fields([combo.get(), fields[0].get(), fields[1].get()]):
@@ -140,7 +140,9 @@ def create_profits(combo, entry, entry_var, fields):
     entry.config(state="readonly")
 
 
-def add_products_record(combo, fields, container, register_id):
+def add_products_record(
+    combo: ttk.Combobox, fields: list, container: TreeContainer, register_id: int
+) -> None:
     """Añade una entrada a la tabla de ventas de productos"""
     if not validate_fields([combo.get(), fields[0].get(), fields[1].get()]):
         return
@@ -165,7 +167,9 @@ def add_products_record(combo, fields, container, register_id):
     core.fill_table(container, register_id)
 
 
-def spawn_product_report_window(container, root, register_id):
+def spawn_product_report_window(
+    container: ProductsContainer, root: tk.Tk, register_id: int
+) -> None:
     """Crea la ventana que permite añadir un reporte de ventas de un producto"""
     query = "SELECT product_name FROM products"
 
@@ -184,7 +188,7 @@ def spawn_product_report_window(container, root, register_id):
     entry_2 = tk.Entry(new_win)
     entry_2.grid(row=1, column=2)
 
-    frozen_var = tk.StringVar(new_win, value="0")
+    frozen_var = tk.IntVar(new_win, value=0)
     frozen = tk.Entry(new_win, textvariable=frozen_var, state="readonly")
     frozen.grid(row=1, column=3)
 
@@ -212,7 +216,9 @@ def spawn_product_report_window(container, root, register_id):
     )
 
 
-def recur_erase_record(container, assoc_container, register_id):
+def recur_erase_record(
+    container: TreeContainer | SimpleContainer, assoc_container: TreeContainer, register_id: int
+) -> None:
     """
     Elimina una entrada de una 'tabla superior' (una que no posee registros de turno)
     y todas sus entradas de forma recursiva de otras tablas
@@ -220,7 +226,7 @@ def recur_erase_record(container, assoc_container, register_id):
     if not check_valid_selection(container.tree):
         return
 
-    record_id = container.tree.item(container.tree.selection())["text"]
+    record_id:  = container.tree.item(container.tree.selection())["text"]
 
     core.delete_record(container.table, "id", record_id)
     core.delete_record(assoc_container.table, "product_id", record_id)
@@ -229,7 +235,9 @@ def recur_erase_record(container, assoc_container, register_id):
     core.fill_table(assoc_container, register_id)
 
 
-def spawn_add_window(container, root, register_id=None):
+def spawn_add_window(
+    container: SimpleContainer, root: tk.Tk, register_id: int | None = None
+) -> None:
     """Crea una ventana que le pide al usuario los datos para añadir un dato a una tabla"""
     add_window = tk.Toplevel(root)
     add_window.title("Crear nuevo registro")
@@ -253,7 +261,9 @@ def spawn_add_window(container, root, register_id=None):
     add_button.pack()
 
 
-def spawn_edit_window(container, root, register_id=None):
+def spawn_edit_window(
+    container: TreeContainer | SimpleContainer, root: tk.Tk, register_id: int | None = None
+) -> None:
     """Crea una ventana que permite editar una entrada de una tabla"""
     if not check_valid_selection(container.tree):
         return
@@ -297,7 +307,7 @@ def spawn_edit_window(container, root, register_id=None):
     btn_edit.grid(row=4, column=2, sticky="we")
 
 
-def show_products(assoc_container, root: tk.Tk):
+def show_products(assoc_container: TreeContainer, root: tk.Tk) -> None:
     """Crea una nueva ventana que muestra que productos hay disponibles en la base de datos"""
     product_wind = tk.Toplevel(root)
     product_wind.title("Lista de productos en venta")
@@ -345,7 +355,7 @@ def show_products(assoc_container, root: tk.Tk):
     btn_2.grid(row=1, column=1)
 
     btn_3 = tk.Button(product_wind, text="Editar")
-    btn_3.bind("<Button-1>", lambda _: spawn_edit_window(root, product_wind_container))
+    btn_3.bind("<Button-1>", lambda _: spawn_edit_window(product_wind_container, root ))
     btn_3.grid(row=1, column=2)
 
     core.fill_table(product_wind_container)

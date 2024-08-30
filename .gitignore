@@ -13,3 +13,5 @@ tags
 tags
 tests/test.py
 tests/
+database.sqlite3
+database.sqlite3
