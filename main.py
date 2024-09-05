@@ -1,11 +1,11 @@
-""",
+"""
 Archivo principal del programa de momento. Ahora usamos clases como una persona normal.
 
 Por Hapurobokka.
 """
 
 import tkinter as tk
-from containers import *
+from containers import TreeContainer, ProductsContainer, TotalsContainer
 
 
 REGISTER_ID = 1

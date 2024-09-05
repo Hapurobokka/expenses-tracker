@@ -85,3 +85,15 @@ CREATE TABLE IF NOT EXISTS products_sales (
     CONSTRAINT fk_register FOREIGN KEY(register_id) REFERENCES registers(id),
     CONSTRAINT fk_product FOREIGN KEY (product_id) REFERENCES products(id)
 );
+
+CREATE TABLE IF NOT EXISTS daily_reports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    register_id INTEGER,
+    final_profits INTEGER,
+    final_expenses INTEGER,
+    total_funds INTEGER,
+    reported_funds INTEGER,
+    difference INTEGER,
+
+    CONSTRAINT fk_register FOREIGN KEY (register_id) REFERENCES registers(id)
+)

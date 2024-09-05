@@ -4,11 +4,11 @@ Definiciones de clase en otro lugar para que todo sirva bien
 Por Hapurobokka
 """
 
+from dataclasses import dataclass
 import tkinter as tk
 from tkinter import ttk
 import core
 import events as ev
-from dataclasses import dataclass
 from stacks import DisplayStack
 
 
@@ -17,7 +17,6 @@ class TreeContainer:
 
     def __init__(self, register_id, root, frame_text, table, table_values) -> None:
         # Valores que seran usados para hacer queries a la base de datos
-        self.root = root
         self.table = table
         self.table_values = table_values
 
@@ -30,8 +29,8 @@ class TreeContainer:
         # Creamos un frame para acomodar todos los elementos del contenedor
         self.frame = tk.Frame(root)
 
-        self.frame_label = tk.Label(self.frame, text=frame_text)
-        self.frame_label.grid(row=0, column=0, columnspan=3)
+        # Creamos un frame label que es solo una label literalmente
+        tk.Label(self.frame, text=frame_text).grid(row=0, column=0, columnspan=3)
 
         self.total_var = tk.IntVar(root, value=0)
 
@@ -39,9 +38,11 @@ class TreeContainer:
         self.tree = ttk.Treeview(self.frame, columns=("name", "amount"))
 
         # Añadiendo y configurando botones
-        self.btn_add = tk.Button(self.frame, text="Añadir")
-        self.btn_erase = tk.Button(self.frame, text="Eliminar")
-        self.btn_edit = tk.Button(self.frame, text="Editar")
+        self.buttons = {
+            "btn_add": tk.Button(self.frame, text="Añadir"),
+            "btn_erase": tk.Button(self.frame, text="Eliminar"),
+            "btn_edit": tk.Button(self.frame, text="Editar")
+        }
 
         self.setup_buttons(register_id)
 
@@ -72,18 +73,18 @@ class TreeContainer:
 
     def setup_buttons(self, register_id):
         """Coloca los botones en su sitio y les asigna eventos"""
-        self.btn_add.grid(row=2, column=0)
-        self.btn_add.bind(
-            "<Button-1>", lambda _: ev.spawn_add_window(self, self.root, register_id)
+        self.buttons["btn_add"].grid(row=2, column=0)
+        self.buttons["btn_add"].bind( 
+            "<Button-1>", lambda _: ev.spawn_add_window(self, register_id) 
         )
 
-        self.btn_edit.grid(row=2, column=1)
-        self.btn_edit.bind(
-            "<Button-1>", lambda _: ev.spawn_edit_window(self, self.root, register_id)
+        self.buttons["btn_edit"].grid(row=2, column=1)
+        self.buttons["btn_edit"].bind(
+            "<Button-1>", lambda _: ev.spawn_edit_window(self, register_id)
         )
 
-        self.btn_erase.grid(row=2, column=2)
-        self.btn_erase.bind(
+        self.buttons["btn_erase"].grid(row=2, column=2)
+        self.buttons["btn_erase"].bind(
             "<Button-1>", lambda _: ev.perform_erase_record(self, register_id)
         )
 
@@ -100,6 +101,7 @@ class ProductsContainer(TreeContainer):
 
     def __init__(self, register_id, root, frame_text, table, table_values) -> None:
         super().__init__(register_id, root, frame_text, table, table_values)
+        self.frame_text = "Productos vendidos"
         self.fill_query = """
         SELECT ps.id, p.product_name, ps.in_product, ps.out_product, ps.profits
         FROM products_sales ps
@@ -133,18 +135,18 @@ class ProductsContainer(TreeContainer):
 
     def setup_buttons(self, register_id):
         """Coloca los botones en su sitio y les asigna eventos"""
-        self.btn_add.grid(row=2, column=0)
-        self.btn_add.bind(
+        self.buttons["btn_add"].grid(row=2, column=0)
+        self.buttons["btn_add"].bind(
             "<Button-1>",
-            lambda _: ev.spawn_product_report_window(self, self.root, register_id),
+            lambda _: ev.spawn_product_report_window(self, register_id),
         )
 
-        self.btn_edit.grid(row=2, column=1)
-        self.btn_edit["text"] = "Mostrar productos"
-        self.btn_edit.bind("<Button-1>", lambda _: ev.show_products(self, self.root))
+        self.buttons["btn_edit"].grid(row=2, column=1)
+        self.buttons["btn_edit"]["text"] = "Mostrar productos"
+        self.buttons["btn_edit"].bind("<Button-1>", lambda _: ev.show_products(self))
 
-        self.btn_erase.grid(row=2, column=2)
-        self.btn_erase.bind(
+        self.buttons["btn_erase"].grid(row=2, column=2)
+        self.buttons["btn_erase"].bind(
             "<Button-1>", lambda _: ev.perform_erase_record(self, register_id)
         )
 
@@ -374,6 +376,7 @@ class TotalsContainer:
 
 @dataclass
 class SimpleContainer:
+    """Clase básica para almacenar contendores simples"""
     root_win: tk.Tk | tk.Toplevel
     table: str
     table_values: list[str]
