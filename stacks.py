@@ -7,33 +7,34 @@ Por Hapurobokka
 import tkinter as tk
 from dataclasses import dataclass
 
-@dataclass
-class LabelEntryPair:
-    label: tk.Label
-    entry: tk.Entry
-
-    def place(self, label_pos, entry_pos):
-        self.label.grid(row=label_pos[0], column=label_pos[1])
-        self.entry.grid(row=entry_pos[0], column=entry_pos[1])
-
 
 @dataclass
 class LabelPair:
-    label1: tk.Label
-    label2: tk.Label
+    """Un par de una tk.label y una tk.entry, o dos tk.labels"""
 
-    def place(self, label1_pos, label2_pos):
-        self.label1.grid(row=label1_pos[0], column=label1_pos[1])
-        self.label2.grid(row=label2_pos[0], column=label2_pos[1])
+    element_1: tk.Label
+    element_2: tk.Entry | tk.Label
+
+    def place(self, label_pos, entry_pos):
+        """Coloca el elemento en la posición asignada"""
+        self.element_1.grid(row=label_pos[0], column=label_pos[1])
+        self.element_2.grid(row=entry_pos[0], column=entry_pos[1])
 
 
 class DisplayStack:
+    """Muchos LabelPairs colocados encima de otro, o algo así"""
+    def __init__(
+        self,
+        root: tk.Frame,
+        label_name: str,
+        elements: list[dict],
+        label_width: int = 19,
+        entry_width: int = 10,
+    ):
+        self.stack = {}
+        self.label_frame = tk.LabelFrame(root, text=label_name)
 
-    def __init__(self, root, elements, label_width=19, entry_width=10):
-        self.label_frame = tk.LabelFrame(root, text=elements[0])
-        self.stack = []
-
-        for elem in elements[1:]:
+        for elem in elements:
             pair = None
 
             if elem["type"] == "LabelEntryPair":
@@ -51,7 +52,7 @@ class DisplayStack:
                     width=entry_width,
                 )
 
-                pair = LabelEntryPair(label, entry)
+                pair = LabelPair(label, entry)
 
             elif elem["type"] == "LabelPair":
                 label1 = tk.Label(
@@ -72,4 +73,4 @@ class DisplayStack:
 
             if pair is not None:
                 pair.place(elem["position"][0], elem["position"][1])
-                self.stack.append(pair)
+                self.stack[elem["name"]] = pair

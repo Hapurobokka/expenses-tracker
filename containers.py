@@ -188,9 +188,10 @@ class TotalsContainer:
 
         self.expenses_stack = DisplayStack(
             self.frame,
+            "Gastos",
             [
-                "Gastos",
                 {
+                    "name": "machine_prices",
                     "type": "LabelEntryPair",
                     "label_text": "Maquinas (Premios)",
                     "state": "readonly",
@@ -198,6 +199,7 @@ class TotalsContainer:
                     "position": [(0, 0), (0, 1)],
                 },
                 {
+                    "name": "machine_replenishments",
                     "type": "LabelEntryPair",
                     "label_text": "Maquinas (Reposiciones)",
                     "state": "readonly",
@@ -205,6 +207,7 @@ class TotalsContainer:
                     "position": [(1, 0), (1, 1)],
                 },
                 {
+                    "name": "misc_expenses",
                     "type": "LabelEntryPair",
                     "label_text": "Gastos Miscelaneos",
                     "state": "readonly",
@@ -212,6 +215,7 @@ class TotalsContainer:
                     "position": [(2, 0), (2, 1)],
                 },
                 {
+                    "name": "total_expenses",
                     "type": "LabelPair",
                     "label_text": "Total",
                     "textvariable": self.total_variables["total_expenses"],
@@ -222,9 +226,10 @@ class TotalsContainer:
 
         self.profits_stack = DisplayStack(
             self.frame,
+            "Ingresos",
             [
-                "Ingresos",
                 {
+                    "name": "initial_funds",
                     "type": "LabelEntryPair",
                     "label_text": "Fondo inicial",
                     "state": "normal",
@@ -232,6 +237,7 @@ class TotalsContainer:
                     "position": [(0, 0), (0, 1)],
                 },
                 {
+                    "name": "additional_funds",
                     "type": "LabelEntryPair",
                     "label_text": "Fondo adicional",
                     "state": "normal",
@@ -239,6 +245,7 @@ class TotalsContainer:
                     "position": [(1, 0), (1, 1)],
                 },
                 {
+                    "name": "products_profits",
                     "type": "LabelEntryPair",
                     "label_text": "Ventas de productos",
                     "state": "readonly",
@@ -246,6 +253,7 @@ class TotalsContainer:
                     "position": [(2, 0), (2, 1)],
                 },
                 {
+                    "name": "total_profits",
                     "type": "LabelPair",
                     "label_text": "Total",
                     "textvariable": self.total_variables["total_profits"],
@@ -257,9 +265,10 @@ class TotalsContainer:
 
         self.report_stack = DisplayStack(
             self.frame,
+            "Ingresos",
             [
-                "Ingresos",
                 {
+                    "name": "expected_funds",
                     "type": "LabelEntryPair",
                     "label_text": "Fondo esperado",
                     "state": "readonly",
@@ -267,6 +276,7 @@ class TotalsContainer:
                     "position": [(0, 0), (0, 1)],
                 },
                 {
+                    "name": "reported_funds",
                     "type": "LabelEntryPair",
                     "label_text": "Fondo reportado",
                     "state": "normal",
@@ -274,6 +284,7 @@ class TotalsContainer:
                     "position": [(1, 0), (1, 1)],
                 },
                 {
+                    "name": "difference",
                     "type": "LabelEntryPair",
                     "label_text": "Diferencia",
                     "state": "readonly",
@@ -281,6 +292,7 @@ class TotalsContainer:
                     "position": [(2, 0), (2, 1)],
                 },
                 {
+                    "name": "balance",
                     "type": "LabelEntryPair",
                     "label_text": "Balance",
                     "state": "readonly",
@@ -291,32 +303,34 @@ class TotalsContainer:
             label_width=13,
         )
 
-        self.profits_stack.stack[0].entry.bind(
+        self.profits_stack.stack["initial_funds"].element_2.bind(
             "<KeyRelease>", self.update_total_profits
         )
-        self.profits_stack.stack[1].entry.bind(
+        self.profits_stack.stack["additional_funds"].element_2.bind(
             "<KeyRelease>", self.update_total_profits
         )
-        self.report_stack.stack[1].entry.bind("<KeyRelease>", self.update_final_reports)
+        self.report_stack.stack["reported_funds"].element_2.bind(
+            "<KeyRelease>", self.update_final_reports
+        )
 
     def add_traces_to_vars(self):
         """Añade callbacks a distintas variables de TKInter para que se actualicen al toque"""
         self.containers_variables["machine_variable"].trace_add(
             "write",
             lambda *args: self.update_total_expenses(
-                self.expenses_stack.stack[0].entry
+                self.expenses_stack.stack["machine_prices"].element_2
             ),
         )
         self.containers_variables["replenish_variable"].trace_add(
             "write",
             lambda *args: self.update_total_expenses(
-                self.expenses_stack.stack[1].entry
+                self.expenses_stack.stack["machine_replenishments"].element_2
             ),
         )
         self.containers_variables["bussiness_variable"].trace_add(
             "write",
             lambda *args: self.update_total_expenses(
-                self.expenses_stack.stack[2].entry
+                self.expenses_stack.stack["misc_expenses"].element_2
             ),
         )
         self.containers_variables["products_variable"].trace_add(
@@ -326,12 +340,14 @@ class TotalsContainer:
     def update_total_profits(self, *args):
         """Actualiza los totales de los ingresos del producto"""
         try:
-            initial_funds = int(self.profits_stack.stack[0].entry.get())
+            initial_funds = int(self.profits_stack.stack["initial_funds"].element_2.get())
         except ValueError:
             initial_funds = 0
 
         try:
-            additional_funds = int(self.profits_stack.stack[1].entry.get())
+            additional_funds = int(
+                self.profits_stack.stack["additional_funds"].element_2.get()
+            )
         except ValueError:
             additional_funds = 0
 
@@ -341,7 +357,7 @@ class TotalsContainer:
             + additional_funds
         )
 
-        self.update_entry(self.profits_stack.stack[2].entry)
+        self.update_entry(self.profits_stack.stack["products_profits"].element_2)
         self.update_final_reports()
 
     def update_total_expenses(self, entry):
@@ -358,12 +374,12 @@ class TotalsContainer:
     def update_final_reports(self, *args):
         """Actualiza la sección de reportes finales de la ventana principal"""
         try:
-            reported_funds = int(self.report_stack.stack[1].entry.get())
+            reported_funds = int(self.report_stack.stack["reported_funds"].element_2.get())
         except ValueError:
             reported_funds = 0
 
         try:
-            initial_funds = int(self.profits_stack.stack[1].entry.get())
+            initial_funds = int(self.profits_stack.stack["initial_funds"].element_2.get())
         except ValueError:
             initial_funds = 0
 
@@ -378,9 +394,9 @@ class TotalsContainer:
             self.total_variables["expected_funds"].get() - initial_funds
         )
 
-        self.update_entry(self.report_stack.stack[0].entry)
-        self.update_entry(self.report_stack.stack[2].entry)
-        self.update_entry(self.report_stack.stack[3].entry)
+        self.update_entry(self.report_stack.stack["expected_funds"].element_2)
+        self.update_entry(self.report_stack.stack["difference"].element_2)
+        self.update_entry(self.report_stack.stack["balance"].element_2)
 
     def update_entry(self, entry, *args):
         """Actualiza una entrada de solo lectura"""
