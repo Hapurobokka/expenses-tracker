@@ -45,10 +45,10 @@ def entry_point(root):
 
     totals_container = TotalsContainer(
         total_expenses_frame,
-        machine_container,
-        replenish_container,
-        bussiness_container,
-        products_container,
+        machine_container.total_var,
+        replenish_container.total_var,
+        bussiness_container.total_var,
+        products_container.total_var,
     )
 
     machine_container.setup_tree(REGISTER_ID)

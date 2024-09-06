@@ -5,6 +5,7 @@ Por Hapurobokka
 """
 
 from dataclasses import dataclass
+
 import tkinter as tk
 from tkinter import ttk
 import core
@@ -41,12 +42,10 @@ class TreeContainer:
         self.buttons = {
             "btn_add": tk.Button(self.frame, text="Añadir"),
             "btn_erase": tk.Button(self.frame, text="Eliminar"),
-            "btn_edit": tk.Button(self.frame, text="Editar")
+            "btn_edit": tk.Button(self.frame, text="Editar"),
         }
 
         self.setup_buttons(register_id)
-
-        # Definiendo el valor de la suma total de las columnas de la tabla
 
     def setup_tree(self, register_id):
         """Dispone las columnas y posición del Treeview, además de llenarlo por primera vez"""
@@ -74,8 +73,8 @@ class TreeContainer:
     def setup_buttons(self, register_id):
         """Coloca los botones en su sitio y les asigna eventos"""
         self.buttons["btn_add"].grid(row=2, column=0)
-        self.buttons["btn_add"].bind( 
-            "<Button-1>", lambda _: ev.spawn_add_window(self, register_id) 
+        self.buttons["btn_add"].bind(
+            "<Button-1>", lambda _: ev.spawn_add_window(self, register_id)
         )
 
         self.buttons["btn_edit"].grid(row=2, column=1)
@@ -160,24 +159,29 @@ class TotalsContainer:
     def __init__(
         self,
         frame: tk.Frame,
-        machine_container: TreeContainer,
-        replenish_container: TreeContainer,
-        bussiness_container: TreeContainer,
-        products_container: ProductsContainer,
+        machine_variable: tk.IntVar,
+        replenish_variable: tk.IntVar,
+        bussiness_variable: tk.IntVar,
+        products_variable: tk.IntVar,
     ) -> None:
         self.frame = frame
 
-        self.machine_container = machine_container
-        self.replenish_container = replenish_container
-        self.bussiness_container = bussiness_container
-        self.products_container = products_container
+        self.containers_variables = {
+            "machine_variable": machine_variable,
+            "replenish_variable": replenish_variable,
+            "bussiness_variable": bussiness_variable,
+            "products_variable": products_variable,
+        }
 
         # Y definimos nuestro total en un inicio
-        self.total_expenses = tk.IntVar(frame, value=0)
-        self.total_profits = tk.IntVar(frame, value=0)
-        self.expected_funds = tk.IntVar(frame, value=0)
-        self.balance = tk.IntVar(frame, value=0)
-        self.difference = tk.IntVar(frame, value=0)
+
+        self.total_variables = {
+            "total_expenses": tk.IntVar(frame, value=0),
+            "total_profits": tk.IntVar(frame, value=0),
+            "expected_funds": tk.IntVar(frame, value=0),
+            "balance": tk.IntVar(frame, value=0),
+            "difference": tk.IntVar(frame, value=0),
+        }
 
         # Definimos traces para cada uno de estos valores
         self.add_traces_to_vars()
@@ -190,27 +194,27 @@ class TotalsContainer:
                     "type": "LabelEntryPair",
                     "label_text": "Maquinas (Premios)",
                     "state": "readonly",
-                    "textvariable": machine_container.total_var,
+                    "textvariable": self.containers_variables["machine_variable"],
                     "position": [(0, 0), (0, 1)],
                 },
                 {
                     "type": "LabelEntryPair",
                     "label_text": "Maquinas (Reposiciones)",
                     "state": "readonly",
-                    "textvariable": replenish_container.total_var,
+                    "textvariable": self.containers_variables["replenish_variable"],
                     "position": [(1, 0), (1, 1)],
                 },
                 {
                     "type": "LabelEntryPair",
                     "label_text": "Gastos Miscelaneos",
                     "state": "readonly",
-                    "textvariable": bussiness_container.total_var,
+                    "textvariable": self.containers_variables["bussiness_variable"],
                     "position": [(2, 0), (2, 1)],
                 },
                 {
                     "type": "LabelPair",
                     "label_text": "Total",
-                    "textvariable": self.total_expenses,
+                    "textvariable": self.total_variables["total_expenses"],
                     "position": [(3, 0), (3, 1)],
                 },
             ],
@@ -238,13 +242,13 @@ class TotalsContainer:
                     "type": "LabelEntryPair",
                     "label_text": "Ventas de productos",
                     "state": "readonly",
-                    "textvariable": products_container.total_var,
+                    "textvariable": self.containers_variables["bussiness_variable"],
                     "position": [(2, 0), (2, 1)],
                 },
                 {
                     "type": "LabelPair",
                     "label_text": "Total",
-                    "textvariable": self.total_profits,
+                    "textvariable": self.total_variables["total_profits"],
                     "position": [(3, 0), (3, 1)],
                 },
             ],
@@ -259,7 +263,7 @@ class TotalsContainer:
                     "type": "LabelEntryPair",
                     "label_text": "Fondo esperado",
                     "state": "readonly",
-                    "textvariable": self.expected_funds,
+                    "textvariable": self.total_variables["expected_funds"],
                     "position": [(0, 0), (0, 1)],
                 },
                 {
@@ -273,14 +277,14 @@ class TotalsContainer:
                     "type": "LabelEntryPair",
                     "label_text": "Diferencia",
                     "state": "readonly",
-                    "textvariable": self.difference,
+                    "textvariable": self.total_variables["difference"],
                     "position": [(2, 0), (2, 1)],
                 },
                 {
                     "type": "LabelEntryPair",
                     "label_text": "Balance",
                     "state": "readonly",
-                    "textvariable": self.balance,
+                    "textvariable": self.total_variables["balance"],
                     "position": [(3, 0), (3, 1)],
                 },
             ],
@@ -297,25 +301,27 @@ class TotalsContainer:
 
     def add_traces_to_vars(self):
         """Añade callbacks a distintas variables de TKInter para que se actualicen al toque"""
-        self.machine_container.total_var.trace_add(
+        self.containers_variables["machine_variable"].trace_add(
             "write",
             lambda *args: self.update_total_expenses(
                 self.expenses_stack.stack[0].entry
             ),
         )
-        self.replenish_container.total_var.trace_add(
+        self.containers_variables["replenish_variable"].trace_add(
             "write",
             lambda *args: self.update_total_expenses(
                 self.expenses_stack.stack[1].entry
             ),
         )
-        self.bussiness_container.total_var.trace_add(
+        self.containers_variables["bussiness_variable"].trace_add(
             "write",
             lambda *args: self.update_total_expenses(
                 self.expenses_stack.stack[2].entry
             ),
         )
-        self.products_container.total_var.trace_add("write", self.update_total_profits)
+        self.containers_variables["products_variable"].trace_add(
+            "write", self.update_total_profits
+        )
 
     def update_total_profits(self, *args):
         """Actualiza los totales de los ingresos del producto"""
@@ -329,8 +335,10 @@ class TotalsContainer:
         except ValueError:
             additional_funds = 0
 
-        self.total_profits.set(
-            self.products_container.total_var.get() + initial_funds + additional_funds
+        self.total_variables["total_profits"].set(
+            self.containers_variables["products_variable"].get()
+            + initial_funds
+            + additional_funds
         )
 
         self.update_entry(self.profits_stack.stack[2].entry)
@@ -338,10 +346,10 @@ class TotalsContainer:
 
     def update_total_expenses(self, entry):
         "Actualiza el valor total de los gastos"
-        self.total_expenses.set(
-            self.machine_container.total_var.get()
-            + self.replenish_container.total_var.get()
-            + self.bussiness_container.total_var.get()
+        self.total_variables["total_expenses"].set(
+            self.containers_variables["machine_variable"].get()
+            + self.containers_variables["replenish_variable"].get()
+            + self.containers_variables["bussiness_variable"].get()
         )
 
         self.update_entry(entry)
@@ -359,9 +367,16 @@ class TotalsContainer:
         except ValueError:
             initial_funds = 0
 
-        self.expected_funds.set(self.total_profits.get() - self.total_expenses.get())
-        self.difference.set(reported_funds - self.expected_funds.get())
-        self.balance.set(self.expected_funds.get() - initial_funds)
+        self.total_variables["expected_funds"].set(
+            self.total_variables["total_profits"].get()
+            - self.total_variables["total_expenses"].get()
+        )
+        self.total_variables["difference"].set(
+            reported_funds - self.total_variables["expected_funds"].get()
+        )
+        self.total_variables["balance"].set(
+            self.total_variables["expected_funds"].get() - initial_funds
+        )
 
         self.update_entry(self.report_stack.stack[0].entry)
         self.update_entry(self.report_stack.stack[2].entry)
@@ -377,6 +392,7 @@ class TotalsContainer:
 @dataclass
 class SimpleContainer:
     """Clase básica para almacenar contendores simples"""
+
     root_win: tk.Tk | tk.Toplevel
     table: str
     table_values: list[str]
