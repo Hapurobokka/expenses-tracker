@@ -306,7 +306,7 @@ class TotalsContainer:
 
         btn_capture = tk.Button(frame, text="Capturar datos")
         btn_capture.grid(row=1, column=1, pady=5)
-        btn_capture.bind("<Button-1>", lambda *_: self.capture_register(register_id))
+        btn_capture.bind("<Button-1>", lambda *_: ev.capture_report(self, register_id))
 
         self.profits_stack.stack["initial_funds"].element_2.bind(
             "<KeyRelease>", lambda *_: self.update_total_profits()
@@ -414,37 +414,6 @@ class TotalsContainer:
         entry.config(state="normal")
 
         entry.config(state="readonly")
-
-    def capture_register(self, register_id):
-        query = """SELECT * FROM daily_reports WHERE register_id = ?"""
-        current_register = core.request_data(query, (register_id,))
-        if current_register == []:
-            print("NO MAMES")
-            return
-
-        update_query = """
-        UPDATE daily_reports
-        SET 
-            final_profits = ?,
-            final_expenses = ?,
-            total_funds = ?,
-            reported_funds = ?,
-            difference = ?
-        WHERE register_id = ?;"""
-
-        core.run_query(
-            update_query,
-            (
-                self.total_variables["total_profits"].get(),
-                self.total_variables["total_expenses"].get(),
-                self.total_variables["expected_funds"].get(),
-                self.report_stack.stack["reported_funds"].element_2.get(),
-                self.total_variables["difference"].get(),
-                register_id
-            ),
-        )
-
-        print(core.request_data(query, (register_id,)))
 
 
 @dataclass

@@ -52,7 +52,7 @@ def create_insert_query(table, table_values):
 
 
 def create_record(table, table_values, values):
-    """Crea una entrada en la tabla indicada usando los valores pasados comoa argumento"""
+    """Crea una entrada en la tabla indicada usando los valores pasados como argumento"""
     query = create_insert_query(table, table_values)
     run_query(query, values)
 

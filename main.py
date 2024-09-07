@@ -8,7 +8,7 @@ import tkinter as tk
 from containers import TreeContainer, ProductsContainer, TotalsContainer
 
 
-REGISTER_ID = 1
+REGISTER_ID = 2
 
 
 def entry_point(root, register_id):

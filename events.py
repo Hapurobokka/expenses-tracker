@@ -9,7 +9,12 @@ import tkinter as tk
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from containers import TreeContainer, SimpleContainer, ProductsContainer
+    from containers import (
+        TreeContainer,
+        SimpleContainer,
+        ProductsContainer,
+        TotalsContainer,
+    )
 
 from tkinter import ttk
 import core
@@ -171,9 +176,7 @@ def add_products_record(
     core.fill_table(container, register_id)
 
 
-def spawn_product_report_window(
-    container: ProductsContainer, register_id: int
-) -> None:
+def spawn_product_report_window(container: ProductsContainer, register_id: int) -> None:
     """Crea la ventana que permite añadir un reporte de ventas de un producto"""
     query = "SELECT product_name FROM products"
 
@@ -369,3 +372,63 @@ def show_products(assoc_container: TreeContainer) -> None:
     btn_3.grid(row=1, column=2)
 
     core.fill_table(product_wind_container)
+
+
+def capture_report(container: TotalsContainer, register_id: int):
+    query = """SELECT * FROM daily_reports WHERE register_id = ?"""
+    current_register = core.request_data(query, (register_id,))
+
+    if current_register == []:
+        core.create_record(
+            "daily_reports",
+            [
+                "register_id",
+                "final_profits",
+                "final_expenses",
+                "total_funds",
+                "initial_funds",
+                "extra_funds",
+                "reported_funds",
+                "difference",
+            ],
+            (
+                register_id,
+                container.total_variables["total_profits"].get(),
+                container.total_variables["total_expenses"].get(),
+                container.total_variables["expected_funds"].get(),
+                container.report_stack.stack["reported_funds"].element_2.get(),
+                container.total_variables["difference"].get(),
+            ),
+        )
+
+        print(core.request_data(query, (register_id,)))
+        return
+
+    update_query = """
+    UPDATE daily_reports
+    SET 
+        final_profits = ?,
+        final_expenses = ?,
+        total_funds = ?,
+        initial_funds = ?,
+        extra_funds = ?,
+        reported_funds = ?,
+        difference = ?
+    WHERE register_id = ?;"""
+
+    core.run_query(
+        update_query,
+        (
+            container.total_variables["total_profits"].get(),
+            container.total_variables["total_expenses"].get(),
+            container.total_variables["expected_funds"].get(),
+            container.profits_stack.stack["initial_funds"].element_2.get(),
+            container.profits_stack.stack["additional_funds"].element_2.get(),
+            container.report_stack.stack["reported_funds"].element_2.get(),
+            container.total_variables["difference"].get(),
+            register_id,
+        ),
+    )
+
+    print(core.request_data(query, (register_id,)))
+

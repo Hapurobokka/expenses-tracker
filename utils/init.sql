@@ -92,6 +92,8 @@ CREATE TABLE IF NOT EXISTS daily_reports (
     final_profits INTEGER,
     final_expenses INTEGER,
     total_funds INTEGER,
+    initial_funds INTEGER,
+    extra_funds INTEGER,
     reported_funds INTEGER,
     difference INTEGER,
 
