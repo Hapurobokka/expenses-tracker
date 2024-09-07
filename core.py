@@ -19,7 +19,7 @@ def run_query(query, parameters=()) -> sqlite3.Cursor:
     return result
 
 
-def request_data(query, parameters=()):
+def request_data(query, parameters=()) -> list[tuple]:
     """Queries the database for the solicited information, then returns a list of tuples"""
     some_cursor = run_query(query, parameters)
     return some_cursor.fetchall()
@@ -63,11 +63,14 @@ def delete_record(table, key, value):
 
 
 def tuples_to_vector(some_tuples):
-    """Toma una lista de tuplas y devuelve una lista que contiene solo el primer valor de todas ellas"""
+    """
+    Toma una lista de tuplas y devuelve una lista que contiene solo el primer valor de todas
+    ellas"""
     return [tup[0] for tup in some_tuples]
 
 
 def get_total_amount(table, selection, register_id):
+    """Queries the database for a list of values and then adds them all"""
     query = f"SELECT {selection} FROM {table} WHERE register_id = ?"
     values = request_data(query, (register_id,))
 
@@ -77,7 +80,7 @@ def get_total_amount(table, selection, register_id):
     return sum(tuples_to_vector(values))
 
 
-def fill_table(container, register_id: int|None = None):
+def fill_table(container, register_id: int | None = None) -> None:
     """Queries the database for data and writes in on a treeview"""
     for element in container.tree.get_children():
         container.tree.delete(element)
@@ -94,3 +97,23 @@ def fill_table(container, register_id: int|None = None):
         return
 
     container.update_total_var(register_id)
+
+
+def fill_entries(container, register_id: int) -> None:
+    """Fills the text fields in our container with data captured for the current register id"""
+    fill_query = """
+    SELECT initial_funds, extra_funds, reported_funds
+    FROM daily_reports
+    WHERE id = ?
+    """
+
+    entry_values = request_data(fill_query, (register_id,))[0]
+
+    if entry_values == ():
+        return
+
+    container.profits_stack.stack["initial_funds"].element_2.insert(0, entry_values[0])
+    container.profits_stack.stack["additional_funds"].element_2.insert(
+        0, entry_values[1]
+    )
+    container.report_stack.stack["reported_funds"].element_2.insert(0, entry_values[2])

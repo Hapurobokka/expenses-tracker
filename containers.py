@@ -318,6 +318,8 @@ class TotalsContainer:
             "<KeyRelease>", lambda *_: self.update_final_reports()
         )
 
+        core.fill_entries(self, register_id)
+
     def add_traces_to_vars(self):
         """Añade callbacks a distintas variables de TKInter para que se actualicen al toque"""
         self.containers_variables["machine_variable"].trace_add(
