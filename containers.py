@@ -309,13 +309,13 @@ class TotalsContainer:
         btn_capture.bind("<Button-1>", lambda *_: self.capture_register(register_id))
 
         self.profits_stack.stack["initial_funds"].element_2.bind(
-            "<KeyRelease>", self.update_total_profits
+            "<KeyRelease>", lambda *_: self.update_total_profits()
         )
         self.profits_stack.stack["additional_funds"].element_2.bind(
-            "<KeyRelease>", self.update_total_profits
+            "<KeyRelease>", lambda *_: self.update_total_profits()
         )
         self.report_stack.stack["reported_funds"].element_2.bind(
-            "<KeyRelease>", self.update_final_reports
+            "<KeyRelease>", lambda *_: self.update_final_reports()
         )
 
     def add_traces_to_vars(self):
@@ -435,11 +435,11 @@ class TotalsContainer:
         core.run_query(
             update_query,
             (
-                self.total_variables["total_profits"],
-                self.total_variables["total_expenses"],
-                self.total_variables["expected_funds"],
-                self.total_variables["reported_funds"],
-                self.total_variables["difference"],
+                self.total_variables["total_profits"].get(),
+                self.total_variables["total_expenses"].get(),
+                self.total_variables["expected_funds"].get(),
+                self.report_stack.stack["reported_funds"].element_2.get(),
+                self.total_variables["difference"].get(),
                 register_id
             ),
         )
