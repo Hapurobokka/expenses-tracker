@@ -6,8 +6,12 @@ Creado por Hapurobokka
 
 from __future__ import annotations
 import tkinter as tk
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from containers import TreeContainer, SimpleContainer, ProductsContainer
+
 from tkinter import ttk
-from containers import *
 import core
 
 
@@ -313,6 +317,8 @@ def spawn_edit_window(
 
 def show_products(assoc_container: TreeContainer) -> None:
     """Crea una nueva ventana que muestra que productos hay disponibles en la base de datos"""
+    from containers import SimpleContainer
+
     product_wind = tk.Toplevel()
     product_wind.title("Lista de productos en venta")
 
@@ -343,7 +349,7 @@ def show_products(assoc_container: TreeContainer) -> None:
     btn_1 = tk.Button(product_wind, text="Añadir")
     btn_1.bind(
         "<Button-1>",
-        lambda _: spawn_add_window(product_wind_container, root),
+        lambda _: spawn_add_window(product_wind_container),
     )
     btn_1.grid(row=1, column=0)
 
@@ -359,7 +365,7 @@ def show_products(assoc_container: TreeContainer) -> None:
     btn_2.grid(row=1, column=1)
 
     btn_3 = tk.Button(product_wind, text="Editar")
-    btn_3.bind("<Button-1>", lambda _: spawn_edit_window(product_wind_container, root))
+    btn_3.bind("<Button-1>", lambda _: spawn_edit_window(product_wind_container))
     btn_3.grid(row=1, column=2)
 
     core.fill_table(product_wind_container)

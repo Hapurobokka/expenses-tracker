@@ -158,6 +158,7 @@ class TotalsContainer:
 
     def __init__(
         self,
+        register_id: int,
         frame: tk.Frame,
         machine_variable: tk.IntVar,
         replenish_variable: tk.IntVar,
@@ -303,6 +304,10 @@ class TotalsContainer:
             label_width=13,
         )
 
+        btn_capture = tk.Button(frame, text="Capturar datos")
+        btn_capture.grid(row=1, column=1, pady=5)
+        btn_capture.bind("<Button-1>", lambda *_: self.capture_register(register_id))
+
         self.profits_stack.stack["initial_funds"].element_2.bind(
             "<KeyRelease>", self.update_total_profits
         )
@@ -317,30 +322,32 @@ class TotalsContainer:
         """Añade callbacks a distintas variables de TKInter para que se actualicen al toque"""
         self.containers_variables["machine_variable"].trace_add(
             "write",
-            lambda *args: self.update_total_expenses(
+            lambda *_: self.update_total_expenses(
                 self.expenses_stack.stack["machine_prices"].element_2
             ),
         )
         self.containers_variables["replenish_variable"].trace_add(
             "write",
-            lambda *args: self.update_total_expenses(
+            lambda *_: self.update_total_expenses(
                 self.expenses_stack.stack["machine_replenishments"].element_2
             ),
         )
         self.containers_variables["bussiness_variable"].trace_add(
             "write",
-            lambda *args: self.update_total_expenses(
+            lambda *_: self.update_total_expenses(
                 self.expenses_stack.stack["misc_expenses"].element_2
             ),
         )
         self.containers_variables["products_variable"].trace_add(
-            "write", self.update_total_profits
+            "write", lambda *_: self.update_total_profits()
         )
 
-    def update_total_profits(self, *args):
+    def update_total_profits(self):
         """Actualiza los totales de los ingresos del producto"""
         try:
-            initial_funds = int(self.profits_stack.stack["initial_funds"].element_2.get())
+            initial_funds = int(
+                self.profits_stack.stack["initial_funds"].element_2.get()
+            )
         except ValueError:
             initial_funds = 0
 
@@ -371,15 +378,19 @@ class TotalsContainer:
         self.update_entry(entry)
         self.update_final_reports()
 
-    def update_final_reports(self, *args):
+    def update_final_reports(self):
         """Actualiza la sección de reportes finales de la ventana principal"""
         try:
-            reported_funds = int(self.report_stack.stack["reported_funds"].element_2.get())
+            reported_funds = int(
+                self.report_stack.stack["reported_funds"].element_2.get()
+            )
         except ValueError:
             reported_funds = 0
 
         try:
-            initial_funds = int(self.profits_stack.stack["initial_funds"].element_2.get())
+            initial_funds = int(
+                self.profits_stack.stack["initial_funds"].element_2.get()
+            )
         except ValueError:
             initial_funds = 0
 
@@ -398,11 +409,42 @@ class TotalsContainer:
         self.update_entry(self.report_stack.stack["difference"].element_2)
         self.update_entry(self.report_stack.stack["balance"].element_2)
 
-    def update_entry(self, entry, *args):
+    def update_entry(self, entry):
         """Actualiza una entrada de solo lectura"""
         entry.config(state="normal")
 
         entry.config(state="readonly")
+
+    def capture_register(self, register_id):
+        query = """SELECT * FROM daily_reports WHERE register_id = ?"""
+        current_register = core.request_data(query, (register_id,))
+        if current_register == []:
+            print("NO MAMES")
+            return
+
+        update_query = """
+        UPDATE daily_reports
+        SET 
+            final_profits = ?,
+            final_expenses = ?,
+            total_funds = ?,
+            reported_funds = ?,
+            difference = ?
+        WHERE register_id = ?;"""
+
+        core.run_query(
+            update_query,
+            (
+                self.total_variables["total_profits"],
+                self.total_variables["total_expenses"],
+                self.total_variables["expected_funds"],
+                self.total_variables["reported_funds"],
+                self.total_variables["difference"],
+                register_id
+            ),
+        )
+
+        print(core.request_data(query, (register_id,)))
 
 
 @dataclass
