@@ -84,7 +84,7 @@ class TreeContainer:
 
         self.buttons["btn_erase"].grid(row=2, column=2)
         self.buttons["btn_erase"].bind(
-            "<Button-1>", lambda _: ev.perform_erase_record(self, register_id)
+            "<Button-1>", lambda _: ev.delete_record_on_click(self, register_id)
         )
 
     def update_total_var(self, register_id):
@@ -142,11 +142,11 @@ class ProductsContainer(TreeContainer):
 
         self.buttons["btn_edit"].grid(row=2, column=1)
         self.buttons["btn_edit"]["text"] = "Mostrar productos"
-        self.buttons["btn_edit"].bind("<Button-1>", lambda _: ev.show_products(self))
+        self.buttons["btn_edit"].bind("<Button-1>", lambda _: ev.show_products())
 
         self.buttons["btn_erase"].grid(row=2, column=2)
         self.buttons["btn_erase"].bind(
-            "<Button-1>", lambda _: ev.perform_erase_record(self, register_id)
+            "<Button-1>", lambda _: ev.delete_record_on_click(self, register_id)
         )
 
     def update_total_var(self, register_id):

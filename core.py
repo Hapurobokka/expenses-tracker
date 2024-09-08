@@ -107,7 +107,10 @@ def fill_entries(container, register_id: int) -> None:
     WHERE id = ?
     """
 
-    entry_values = request_data(fill_query, (register_id,))[0]
+    try:
+        entry_values = request_data(fill_query, (register_id,))[0]
+    except IndexError:
+        return
 
     if entry_values == ():
         return

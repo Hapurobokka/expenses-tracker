@@ -6,6 +6,7 @@ Creado por Hapurobokka
 
 from __future__ import annotations
 import tkinter as tk
+from tkinter import messagebox
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -74,8 +75,8 @@ def check_valid_selection(tree: ttk.Treeview) -> bool:
     return True
 
 
-def perform_erase_record(
-    container: TreeContainer, register_id: int | None = None
+def delete_record_on_click(
+    container: TreeContainer | SimpleContainer, register_id: int | None = None
 ) -> None:
     """Borra una entrada de la lista"""
     if not check_valid_selection(container.tree):
@@ -318,7 +319,7 @@ def spawn_edit_window(
     btn_edit.grid(row=4, column=2, sticky="we")
 
 
-def show_products(assoc_container: TreeContainer) -> None:
+def show_products() -> None:
     """Crea una nueva ventana que muestra que productos hay disponibles en la base de datos"""
     from containers import SimpleContainer
 
@@ -357,14 +358,7 @@ def show_products(assoc_container: TreeContainer) -> None:
     btn_1.grid(row=1, column=0)
 
     btn_2 = tk.Button(product_wind, text="Borrar")
-    btn_2.bind(
-        "<Button-1>",
-        lambda _: recur_erase_record(
-            product_wind_container,
-            assoc_container,
-            REGISTER_ID,
-        ),
-    )
+    btn_2.bind("<Button-1>", lambda _: delete_record_on_click(product_wind_container))
     btn_2.grid(row=1, column=1)
 
     btn_3 = tk.Button(product_wind, text="Editar")
@@ -375,6 +369,13 @@ def show_products(assoc_container: TreeContainer) -> None:
 
 
 def capture_report(container: TotalsContainer, register_id: int):
+    confirmation = messagebox.askyesno(
+        "Confirmación", "¿Estás seguro de que quieres capturar este turno?"
+    )
+
+    if not confirmation:
+        return
+
     query = """SELECT * FROM daily_reports WHERE register_id = ?"""
     current_register = core.request_data(query, (register_id,))
 
@@ -431,4 +432,3 @@ def capture_report(container: TotalsContainer, register_id: int):
     )
 
     print(core.request_data(query, (register_id,)))
-
