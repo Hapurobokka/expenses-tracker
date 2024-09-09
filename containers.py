@@ -318,6 +318,10 @@ class TotalsContainer:
             "<KeyRelease>", lambda *_: self.update_final_reports()
         )
 
+        self.expenses_stack.label_frame.grid(row=0, column=0, padx=5)
+        self.profits_stack.label_frame.grid(row=0, column=1, padx=5)
+        self.report_stack.label_frame.grid(row=0, column=2, padx=5)
+
         core.fill_entries(self, register_id)
 
     def add_traces_to_vars(self):

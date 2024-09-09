@@ -4,10 +4,14 @@ Eventos para cuando pulsemos un bóton. Odio escribir interfaces gráficas.
 Creado por Hapurobokka
 """
 
+
 from __future__ import annotations
 import tkinter as tk
+from tkinter import ttk
 from tkinter import messagebox
 from typing import TYPE_CHECKING
+
+import core
 
 if TYPE_CHECKING:
     from containers import (
@@ -16,12 +20,6 @@ if TYPE_CHECKING:
         ProductsContainer,
         TotalsContainer,
     )
-
-from tkinter import ttk
-import core
-
-
-REGISTER_ID = 1
 
 
 def validate_fields(fields: list) -> bool:
@@ -224,26 +222,26 @@ def spawn_product_report_window(container: ProductsContainer, register_id: int) 
     )
 
 
-def recur_erase_record(
-    container: TreeContainer | SimpleContainer,
-    assoc_container: TreeContainer,
-    register_id: int,
-) -> None:
-    """
-    Elimina una entrada de una 'tabla superior' (una que no posee registros de turno)
-    y todas sus entradas de forma recursiva de otras tablas
-    """
-    if not check_valid_selection(container.tree):
-        return
-
-    record_id = container.tree.item(container.tree.selection())["text"]  # type: ignore
-
-    core.delete_record(container.table, "id", record_id)
-    core.delete_record(assoc_container.table, "product_id", record_id)
-
-    core.fill_table(container)
-    core.fill_table(assoc_container, register_id)
-
+# def recur_erase_record(
+#     container: TreeContainer | SimpleContainer,
+#     assoc_container: TreeContainer,
+#     register_id: int,
+# ) -> None:
+#     """
+#     Elimina una entrada de una 'tabla superior' (una que no posee registros de turno)
+#     y todas sus entradas de forma recursiva de otras tablas
+#     """
+#     if not check_valid_selection(container.tree):
+#         return
+#
+#     record_id = container.tree.item(container.tree.selection())["text"]  # type: ignore
+#
+#     core.delete_record(container.table, "id", record_id)
+#     core.delete_record(assoc_container.table, "product_id", record_id)
+#
+#     core.fill_table(container)
+#     core.fill_table(assoc_container, register_id)
+#
 
 def spawn_add_window(
     container: SimpleContainer | TreeContainer,
@@ -251,7 +249,7 @@ def spawn_add_window(
 ) -> None:
     """Crea una ventana que le pide al usuario los datos para añadir un dato a una tabla"""
     add_window = tk.Toplevel()
-    add_window.title("Crear nuevo registro")
+    add_window.title("Crear nueva entrada")
 
     tk.Label(add_window, text="Nombre").pack()
 
@@ -397,6 +395,8 @@ def capture_report(container: TotalsContainer, register_id: int):
                 container.total_variables["total_profits"].get(),
                 container.total_variables["total_expenses"].get(),
                 container.total_variables["expected_funds"].get(),
+                container.profits_stack.stack["initial_funds"].element_2.get(),
+                container.profits_stack.stack["additional_funds"].element_2.get(),
                 container.report_stack.stack["reported_funds"].element_2.get(),
                 container.total_variables["difference"].get(),
             ),
@@ -432,3 +432,4 @@ def capture_report(container: TotalsContainer, register_id: int):
     )
 
     print(core.request_data(query, (register_id,)))
+

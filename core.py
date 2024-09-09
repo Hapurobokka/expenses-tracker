@@ -5,7 +5,7 @@ Por Hapurobokka.
 """
 
 import sqlite3
-import tkinter
+import tkinter as tk
 
 DATABASE = "database.sqlite3"
 
@@ -91,7 +91,7 @@ def fill_table(container, register_id: int | None = None) -> None:
         db_rows = run_query(container.fill_query, (register_id,))
 
     for row in db_rows:
-        container.tree.insert("", tkinter.END, text=row[0], values=row[1:])
+        container.tree.insert("", tk.END, text=row[0], values=row[1:])
 
     if container.table == "products":
         return
@@ -114,6 +114,10 @@ def fill_entries(container, register_id: int) -> None:
 
     if entry_values == ():
         return
+
+    container.profits_stack.stack["initial_funds"].element_2.delete(0, tk.END)
+    container.profits_stack.stack["additional_funds"].element_2.delete(0, tk.END)
+    container.report_stack.stack["reported_funds"].element_2.delete(0, tk.END)
 
     container.profits_stack.stack["initial_funds"].element_2.insert(0, entry_values[0])
     container.profits_stack.stack["additional_funds"].element_2.insert(
