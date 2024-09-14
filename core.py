@@ -81,7 +81,7 @@ def get_total_amount(table, selection, register_id):
 
 
 def fill_table(container, register_id: int | None = None) -> None:
-    """Queries the database for data and writes in on a treeview"""
+    """Queries the database for data and writes it on a treeview"""
     for element in container.tree.get_children():
         container.tree.delete(element)
 
@@ -99,28 +99,11 @@ def fill_table(container, register_id: int | None = None) -> None:
     container.update_total_var(register_id)
 
 
-def fill_entries(container, register_id: int) -> None:
-    """Fills the text fields in our container with data captured for the current register id"""
-    fill_query = """
-    SELECT initial_funds, extra_funds, reported_funds
-    FROM daily_reports
-    WHERE id = ?
-    """
+def get_id(table, field, value):
+    """Gets an id from the database"""
+    db_id = request_data(f"SELECT id FROM {table} WHERE {field} = ?", (value,))
 
     try:
-        entry_values = request_data(fill_query, (register_id,))[0]
+        return db_id[0][0]
     except IndexError:
-        return
-
-    if entry_values == ():
-        return
-
-    container.profits_stack.stack["initial_funds"].element_2.delete(0, tk.END)
-    container.profits_stack.stack["additional_funds"].element_2.delete(0, tk.END)
-    container.report_stack.stack["reported_funds"].element_2.delete(0, tk.END)
-
-    container.profits_stack.stack["initial_funds"].element_2.insert(0, entry_values[0])
-    container.profits_stack.stack["additional_funds"].element_2.insert(
-        0, entry_values[1]
-    )
-    container.report_stack.stack["reported_funds"].element_2.insert(0, entry_values[2])
+        return None

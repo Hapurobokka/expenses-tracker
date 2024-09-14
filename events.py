@@ -4,7 +4,6 @@ Eventos para cuando pulsemos un bóton. Odio escribir interfaces gráficas.
 Creado por Hapurobokka
 """
 
-
 from __future__ import annotations
 import tkinter as tk
 from tkinter import ttk
@@ -243,6 +242,7 @@ def spawn_product_report_window(container: ProductsContainer, register_id: int) 
 #     core.fill_table(assoc_container, register_id)
 #
 
+
 def spawn_add_window(
     container: SimpleContainer | TreeContainer,
     register_id: int | None = None,
@@ -402,7 +402,6 @@ def capture_report(container: TotalsContainer, register_id: int):
             ),
         )
 
-        print(core.request_data(query, (register_id,)))
         return
 
     update_query = """
@@ -431,5 +430,101 @@ def capture_report(container: TotalsContainer, register_id: int):
         ),
     )
 
-    print(core.request_data(query, (register_id,)))
 
+def refill_containers(
+    containers: dict,
+    register_id: int,
+) -> None:
+    core.fill_table(containers["machine_container"], register_id)
+    core.fill_table(containers["replenish_container"], register_id)
+    core.fill_table(containers["bussiness_container"], register_id)
+    core.fill_table(containers["products_container"], register_id)
+
+    containers["totals_container"].fill_entries(register_id)
+
+
+def create_register(entries: dict[str, tk.Entry], containers: dict, root: tk.Toplevel):
+    """Creates a new register record with an employee, shift and date"""
+    if not validate_fields(
+        [entries["employee"].get(), entries["date"].get(), entries["shift"].get()]
+    ):
+        return
+
+    employee = entries["employee"].get()
+    date = entries["date"].get()
+    shift = entries["shift"].get()
+
+    employee_id = core.get_id("employees", "employee_name", employee)
+    date_id = core.get_id("dates", "date", date)
+    shift_id = core.get_id("shifts", "shift_name", shift)
+
+    if employee_id is None or shift_id is None:
+        return
+
+    if date_id is None:
+        confirm = messagebox.askyesno(
+            "Confirmación",
+            f"{date} aún no tiene turnos, ¿quieres añadir la fecha a la base de datos?",
+        )
+
+        if not confirm:
+            return
+
+        core.run_query("INSERT INTO dates VALUES (NULL, ?)", (date,))
+        date_id = core.get_id("dates", "date", date)
+
+    register_query = """
+    SELECT id
+    FROM registers
+    WHERE employee_id = ? AND date_id = ? AND shift_id = ?
+    """
+
+    register_id = core.request_data(register_query, (employee_id, date_id, shift_id))
+
+    if register_id == []:
+        core.create_record(
+            "registers",
+            ["employee_id", "date_id", "shift_id"],
+            (employee_id, date_id, shift_id),
+        )
+        register_id = core.request_data(
+            register_query, (employee_id, date_id, shift_id)
+        )
+
+    refill_containers(containers, register_id[0][0])
+    root.destroy()
+
+
+def spawn_add_register_window(containers, master):
+    """
+    Crea la ventana que se encarga de crear un nuevo turno
+
+    Esto esta en main porque básicamente me puede joder
+    """
+    wind = tk.Toplevel()
+    wind.title("Crear un nuevo turno")
+
+    entries: dict[str, ttk.Combobox | tk.Entry] = {}
+
+    entries["employee"] = ttk.Combobox(
+        wind,
+        values=[i[0] for i in core.request_data("SELECT employee_name FROM employees")],
+    )
+    entries["date"] = tk.Entry(wind)
+    entries["shift"] = ttk.Combobox(
+        wind,
+        values=[i[0] for i in core.request_data("SELECT shift_name FROM shifts")],
+    )
+
+    tk.Label(wind, text="Empleado").grid(row=0, column=0)
+    entries["employee"].grid(row=1, column=0)
+    tk.Label(wind, text="Turno").grid(row=0, column=1)
+    entries["shift"].grid(row=1, column=1)
+    tk.Label(wind, text="Fecha").grid(row=0, column=2)
+    entries["date"].grid(row=1, column=2)
+
+    tk.Button(
+        wind,
+        text="Confirmar",
+        command=lambda: create_register(entries, containers, master, wind),
+    ).grid(row=2, column=1)

@@ -322,8 +322,6 @@ class TotalsContainer:
         self.profits_stack.label_frame.grid(row=0, column=1, padx=5)
         self.report_stack.label_frame.grid(row=0, column=2, padx=5)
 
-        core.fill_entries(self, register_id)
-
     def add_traces_to_vars(self):
         """Añade callbacks a distintas variables de TKInter para que se actualicen al toque"""
         self.containers_variables["machine_variable"].trace_add(
@@ -414,6 +412,37 @@ class TotalsContainer:
         self.update_entry(self.report_stack.stack["expected_funds"].element_2)
         self.update_entry(self.report_stack.stack["difference"].element_2)
         self.update_entry(self.report_stack.stack["balance"].element_2)
+
+    def fill_entries(self, register_id: int) -> None:
+        """
+        Fills the text fields in our container with data captured for the current
+        register id"""
+
+        fill_query = """
+        SELECT initial_funds, extra_funds, reported_funds
+        FROM daily_reports
+        WHERE register_id = ?
+        """
+
+        self.profits_stack.stack["initial_funds"].element_2.delete(0, tk.END)
+        self.profits_stack.stack["additional_funds"].element_2.delete(0, tk.END)
+        self.report_stack.stack["reported_funds"].element_2.delete(0, tk.END)
+
+        self.update_total_profits()
+
+        try:
+            entry_values = core.request_data(fill_query, (register_id,))[0]
+        except IndexError:
+            return
+
+        if entry_values == ():
+            return
+
+        self.profits_stack.stack["initial_funds"].element_2.insert(0, entry_values[0])
+        self.profits_stack.stack["additional_funds"].element_2.insert(
+            0, entry_values[1]
+        )
+        self.report_stack.stack["reported_funds"].element_2.insert(0, entry_values[2])
 
     def update_entry(self, entry):
         """Actualiza una entrada de solo lectura"""
