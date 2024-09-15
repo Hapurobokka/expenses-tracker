@@ -10,8 +10,6 @@ import events as ev
 import core
 
 
-REGISTER_ID = 8
-
 def get_register_info(root, register_id):
     data_query = """
     SELECT e.employee_name, s.shift_name, d.date
@@ -36,7 +34,9 @@ def create_register_display(root, register_info):
 
     employee_frame = tk.LabelFrame(frame, text="Empleado")
     employee_frame.grid(row=0, column=0)
-    tk.Label(employee_frame, textvariable=register_info["employee"]).grid(row=0, column=0)
+    tk.Label(employee_frame, textvariable=register_info["employee"]).grid(
+        row=0, column=0
+    )
 
     shift_frame = tk.LabelFrame(frame, text="Turno")
     shift_frame.grid(row=0, column=1)
@@ -57,6 +57,7 @@ def get_lastest_register():
     """
 
     return core.request_data(query)[0][0]
+
 
 def entry_point(root):
     """Punto de entrada para el programa"""
@@ -112,12 +113,16 @@ def entry_point(root):
 
     tk.Button(
         text="Añadir nuevo registro",
-        command=lambda: ev.spawn_add_register_window(containers, root),
+        command=lambda: ev.spawn_add_register_window(containers),
     ).grid(row=0, column=0)
 
     register_display_frame = create_register_display(root, register_info)
-
     register_display_frame.grid(row=0, column=1)
+
+    controlers_frame = tk.Frame(root)
+    tk.Button(controlers_frame, text="Mostrar empleados").grid(row=0, column=0)
+
+    controlers_frame.grid(row=0, column=2)
 
     containers["machine_container"].frame.grid(
         row=1, column=0, padx=10, pady=10, sticky="nsew"

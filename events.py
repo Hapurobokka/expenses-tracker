@@ -495,7 +495,7 @@ def create_register(entries: dict[str, tk.Entry], containers: dict, root: tk.Top
     root.destroy()
 
 
-def spawn_add_register_window(containers, master):
+def spawn_add_register_window(containers):
     """
     Crea la ventana que se encarga de crear un nuevo turno
 
@@ -508,7 +508,11 @@ def spawn_add_register_window(containers, master):
 
     entries["employee"] = ttk.Combobox(
         wind,
-        values=[i[0] for i in core.request_data("SELECT employee_name FROM employees")],
+        values=[
+            i[0] for i in core.request_data(
+                "SELECT employee_name FROM employees ORDER BY employee_name ASC"
+            )
+        ],
     )
     entries["date"] = tk.Entry(wind)
     entries["shift"] = ttk.Combobox(
@@ -516,15 +520,19 @@ def spawn_add_register_window(containers, master):
         values=[i[0] for i in core.request_data("SELECT shift_name FROM shifts")],
     )
 
+    current_date = core.request_data("SELECT date('now')")[0][0]
+
     tk.Label(wind, text="Empleado").grid(row=0, column=0)
     entries["employee"].grid(row=1, column=0)
     tk.Label(wind, text="Turno").grid(row=0, column=1)
     entries["shift"].grid(row=1, column=1)
+
     tk.Label(wind, text="Fecha").grid(row=0, column=2)
     entries["date"].grid(row=1, column=2)
+    entries["date"].insert(0, current_date)
 
     tk.Button(
         wind,
         text="Confirmar",
-        command=lambda: create_register(entries, containers, master, wind),
+        command=lambda: create_register(entries, containers, wind),
     ).grid(row=2, column=1)
