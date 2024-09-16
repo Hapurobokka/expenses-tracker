@@ -11,6 +11,7 @@ import core
 
 
 def get_register_info(root, register_id):
+    """Obtiene toda la información del register_id actual"""
     data_query = """
     SELECT e.employee_name, s.shift_name, d.date
     FROM registers r
@@ -30,6 +31,7 @@ def get_register_info(root, register_id):
 
 
 def create_register_display(root, register_info):
+    """Crea un frame donde se mostrara la información del register_id actual"""
     frame = tk.Frame(root)
 
     employee_frame = tk.LabelFrame(frame, text="Empleado")
@@ -50,6 +52,7 @@ def create_register_display(root, register_info):
 
 
 def get_lastest_register():
+    """Obtiene el último register_id de la base de datos"""
     query = """
     SELECT * FROM registers
     ORDER BY id DESC
@@ -120,7 +123,18 @@ def entry_point(root):
     register_display_frame.grid(row=0, column=1)
 
     controlers_frame = tk.Frame(root)
-    tk.Button(controlers_frame, text="Mostrar empleados").grid(row=0, column=0)
+    employees_button = tk.Button(controlers_frame, text="Mostrar empleados")
+    employees_button.grid(row=0, column=0)
+    employees_button.bind(
+        "<Button-1>",
+        lambda _: ev.show_table(
+            "employees",
+            ["id", "employee_name"],
+            "Ver empleados",
+            "employee",
+            "Empleado",
+        ),
+    )
 
     controlers_frame.grid(row=0, column=2)
 

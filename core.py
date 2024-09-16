@@ -93,7 +93,7 @@ def fill_table(container, register_id: int | None = None) -> None:
     for row in db_rows:
         container.tree.insert("", tk.END, text=row[0], values=row[1:])
 
-    if container.table == "products":
+    if container.table in ["products", "employees"]:
         return
 
     container.update_total_var(register_id)

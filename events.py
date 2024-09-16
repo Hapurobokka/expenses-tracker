@@ -317,56 +317,80 @@ def spawn_edit_window(
     btn_edit.grid(row=4, column=2, sticky="we")
 
 
-def show_products() -> None:
-    """Crea una nueva ventana que muestra que productos hay disponibles en la base de datos"""
-    from containers import SimpleContainer
+def create_table_tree(table_container, columns, columns_name):
+    """Crea el treeview de un contenedor simple (o probablemente de cualquier otro contendor)"""
+    table_container.tree.heading("#0", text="ID", anchor=tk.CENTER)
+    table_container.tree.column("#0", width=40)
 
-    product_wind = tk.Toplevel()
-    product_wind.title("Lista de productos en venta")
+    if isinstance(columns_name, str):
+        table_container.tree.heading(columns, text=columns_name, anchor=tk.CENTER)  # type: ignore
+        table_container.tree.column(columns, width=75)
+        return
 
-    product_wind_container = SimpleContainer(
-        product_wind,
-        "products",
-        ["id", "product_name", "price"],
-        ttk.Treeview(product_wind, columns=["name", "price"]),
-        "SELECT * FROM products",
-    )
+    cols_len = 0
+    for column in columns:
+        table_container.tree.heading(column, text=columns_name[cols_len], anchor=tk.CENTER)
+        table_container.tree.column(column, width=75)
 
-    product_wind_container.tree.heading("#0", text="ID", anchor=tk.CENTER)
-    product_wind_container.tree.heading("name", text="Nombre", anchor=tk.CENTER)
-    product_wind_container.tree.heading("price", text="Precio", anchor=tk.CENTER)
+        cols_len += 1
 
-    product_wind_container.tree.column("#0", width=40)
-    product_wind_container.tree.column("name", width=75)
-    product_wind_container.tree.column("price", width=90)
-    product_wind_container.tree.grid(row=0, column=0, columnspan=3, sticky="nsew")
+def setup_table_window(table_container, table_wind):
+    """Coloca los controles de la ventana del SimpleContainer"""
+    table_container.tree.grid(row=0, column=0, columnspan=3, sticky="nsew")
 
     vscroll = tk.Scrollbar(
-        product_wind, orient="vertical", command=product_wind_container.tree.yview
+        table_wind, orient="vertical", command=table_container.tree.yview
     )
+    table_container.tree.configure(yscrollcommand=vscroll.set)
 
-    vscroll.grid(row=0, column=4, sticky="ns")
-    product_wind_container.tree.configure(yscrollcommand=vscroll.set)
-
-    btn_1 = tk.Button(product_wind, text="Añadir")
+    btn_1 = tk.Button(table_wind, text="Añadir")
     btn_1.bind(
         "<Button-1>",
-        lambda _: spawn_add_window(product_wind_container),
+        lambda _: spawn_add_window(table_container),
     )
     btn_1.grid(row=1, column=0)
 
-    btn_2 = tk.Button(product_wind, text="Borrar")
-    btn_2.bind("<Button-1>", lambda _: delete_record_on_click(product_wind_container))
+    btn_2 = tk.Button(table_wind, text="Borrar")
+    btn_2.bind("<Button-1>", lambda _: delete_record_on_click(table_container))
     btn_2.grid(row=1, column=1)
 
-    btn_3 = tk.Button(product_wind, text="Editar")
-    btn_3.bind("<Button-1>", lambda _: spawn_edit_window(product_wind_container))
+    btn_3 = tk.Button(table_wind, text="Editar")
+    btn_3.bind("<Button-1>", lambda _: spawn_edit_window(table_container))
     btn_3.grid(row=1, column=2)
 
-    core.fill_table(product_wind_container)
+
+def show_table(
+    table: str,
+    table_values: list[str],
+    message: str,
+    columns: tuple[str, str] | str,
+    columns_name: tuple[str, str] | str,
+) -> None:
+    """
+    Crea una ventana con controles para editar una tabla sin columna de register_id
+
+    Para estas tablas usamos un SimpleContainer en lugar del TreeContainer habitual."""
+    from containers import SimpleContainer
+
+    table_wind = tk.Toplevel()
+    table_wind.title(message)
+
+    table_container = SimpleContainer(
+        table_wind,
+        table,
+        table_values,
+        ttk.Treeview(table_wind, columns=columns),
+        f"SELECT * FROM {table}",
+    )
+
+    create_table_tree(table_container, columns, columns_name)
+    setup_table_window(table_container, table_wind)
+
+    core.fill_table(table_container)
 
 
 def capture_report(container: TotalsContainer, register_id: int):
+    """Captura los valores del TotalsContainer en el registro asociado"""
     confirmation = messagebox.askyesno(
         "Confirmación", "¿Estás seguro de que quieres capturar este turno?"
     )
@@ -435,6 +459,7 @@ def refill_containers(
     containers: dict,
     register_id: int,
 ) -> None:
+    """Vuelve a llenar todos los contenedores con el nuevo register_id"""
     core.fill_table(containers["machine_container"], register_id)
     core.fill_table(containers["replenish_container"], register_id)
     core.fill_table(containers["bussiness_container"], register_id)
@@ -509,7 +534,8 @@ def spawn_add_register_window(containers):
     entries["employee"] = ttk.Combobox(
         wind,
         values=[
-            i[0] for i in core.request_data(
+            i[0]
+            for i in core.request_data(
                 "SELECT employee_name FROM employees ORDER BY employee_name ASC"
             )
         ],
