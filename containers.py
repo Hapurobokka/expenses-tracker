@@ -74,12 +74,12 @@ class TreeContainer:
         """Coloca los botones en su sitio y les asigna eventos"""
         self.buttons["btn_add"].grid(row=2, column=0)
         self.buttons["btn_add"].bind(
-            "<Button-1>", lambda _: ev.spawn_add_window(self, register_id)
+            "<Button-1>", lambda _: ev.spawn_add_window(self, ("Nombre", "Cantidad"), register_id)
         )
 
         self.buttons["btn_edit"].grid(row=2, column=1)
         self.buttons["btn_edit"].bind(
-            "<Button-1>", lambda _: ev.spawn_edit_window(self, register_id)
+            "<Button-1>", lambda _: ev.spawn_edit_window(self, ["Nombre", "Cantidad"], register_id)
         )
 
         self.buttons["btn_erase"].grid(row=2, column=2)

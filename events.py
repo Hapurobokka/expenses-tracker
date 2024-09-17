@@ -59,13 +59,14 @@ def perform_add_record(
 
     en_name.delete(0, tk.END)
     en_amount.delete(0, tk.END)
+    en_name.focus()
 
 
 def check_valid_selection(tree: ttk.Treeview) -> bool:
     """Revisa si hay un elemento seleccionado en el Treeview pasado como argumento"""
     try:
-        selected_item = tree.selection()
-        _ = tree.item(selected_item)["values"][0]  # type: ignore
+        selected_item = tree.selection()[0]
+        _ = tree.item(selected_item)["values"][0]
     except IndexError:
         return False
 
@@ -87,26 +88,31 @@ def delete_record_on_click(
 
 def perform_alter_record(
     edit_wind: tk.Toplevel,
-    container: TreeContainer | SimpleContainer,
+    container: SimpleContainer | TreeContainer,
+    columns: list[str],
+    entries: list[tk.Entry],
     record_id: int,
-    buttons: list,
     register_id: int | None = None,
 ) -> None:
     """Realiza la transacción de editar un elemento en la tabla"""
-    if not validate_fields([buttons[0].get(), buttons[1].get()]):
+    if not validate_fields([x.get() for x in entries]):
         return
 
-    new_name = buttons[0].get().upper()
-    try:
-        new_amount = int(buttons[1].get())
-    except ValueError:
-        return
+    values = []
+    for entry in entries:
+        val = entry.get()
 
-    query = f"""UPDATE {container.table}
-    SET {container.table_values[1]} = ?, {container.table_values[2]} = ?
+        if val.isdigit():
+            values.append(int(val))
+        else:
+            values.append(val.upper())
+
+    query = f"""
+    UPDATE {container.table}
+    SET {core.create_query_placeholder(columns)}
     WHERE id = ?"""
 
-    core.run_query(query, (new_name, new_amount, record_id))
+    core.run_query(query, (*values, record_id))
     edit_wind.destroy()
 
     core.fill_table(container, register_id)
@@ -245,19 +251,20 @@ def spawn_product_report_window(container: ProductsContainer, register_id: int) 
 
 def spawn_add_window(
     container: SimpleContainer | TreeContainer,
+    labels: tuple[str, str] | str,
     register_id: int | None = None,
 ) -> None:
     """Crea una ventana que le pide al usuario los datos para añadir un dato a una tabla"""
     add_window = tk.Toplevel()
     add_window.title("Crear nueva entrada")
 
-    tk.Label(add_window, text="Nombre").pack()
+    tk.Label(add_window, text=labels[0]).pack()
 
     en_name = tk.Entry(add_window)
     en_name.focus()
     en_name.pack()
 
-    tk.Label(add_window, text="Cantidad").pack()
+    tk.Label(add_window, text=labels[1]).pack()
 
     en_amount = tk.Entry(add_window)
     en_amount.pack()
@@ -272,52 +279,49 @@ def spawn_add_window(
 
 def spawn_edit_window(
     container: TreeContainer | SimpleContainer,
+    fields: list[str] | str,
     register_id: int | None = None,
 ) -> None:
     """Crea una ventana que permite editar una entrada de una tabla"""
     if not check_valid_selection(container.tree):
         return
 
-    record_id = container.tree.item(container.tree.selection())["text"]  # type: ignore
-    old_name = container.tree.item(container.tree.selection())["values"][0]  # type: ignore
-    old_amount = container.tree.item(container.tree.selection())["values"][1]  # type: ignore
-
     edit_wind = tk.Toplevel()
     edit_wind.title("Editar registro")
 
-    tk.Label(edit_wind, text="Nombre anterior: ").grid(row=0, column=1)
-    tk.Entry(
-        edit_wind,
-        textvariable=tk.StringVar(edit_wind, value=old_name),
-        state="readonly",
-    ).grid(row=0, column=2)
+    selected_values = container.tree.item(container.tree.selection()[0])
+    record_id = int(selected_values["text"])
 
-    tk.Label(edit_wind, text="Nuevo nombre: ").grid(row=1, column=1)
-    new_name = tk.Entry(edit_wind)
-    new_name.grid(row=1, column=2)
+    entries = []
 
-    tk.Label(edit_wind, text="Old Price: ").grid(row=2, column=1)
-    tk.Entry(
-        edit_wind,
-        textvariable=tk.StringVar(edit_wind, value=old_amount),
-        state="readonly",
-    ).grid(row=2, column=2)
-
-    tk.Label(edit_wind, text="New Price: ").grid(row=3, column=1)
-    new_amount = tk.Entry(edit_wind)
-    new_amount.grid(row=3, column=2)
+    if isinstance(fields, str):
+        tk.Label(edit_wind, text=f"{fields}").pack()
+        entry = tk.Entry(edit_wind)
+        entry.pack()
+        entries.append(entry)
+    else:
+        for field in fields:
+            tk.Label(edit_wind, text=f"{field}").pack()
+            entry = tk.Entry(edit_wind)
+            entry.pack()
+            entries.append(entry)
 
     btn_edit = tk.Button(edit_wind, text="Editar")
     btn_edit.bind(
         "<Button-1>",
         lambda _: perform_alter_record(
-            edit_wind, container, record_id, [new_name, new_amount], register_id
+            edit_wind,
+            container,
+            container.table_values[1:],
+            entries,
+            record_id,
+            register_id,
         ),
     )
-    btn_edit.grid(row=4, column=2, sticky="we")
+    btn_edit.pack()
 
 
-def create_table_tree(table_container, columns, columns_name):
+def create_table_tree(table_container: SimpleContainer, columns, columns_name):
     """Crea el treeview de un contenedor simple (o probablemente de cualquier otro contendor)"""
     table_container.tree.heading("#0", text="ID", anchor=tk.CENTER)
     table_container.tree.column("#0", width=40)
@@ -329,12 +333,15 @@ def create_table_tree(table_container, columns, columns_name):
 
     cols_len = 0
     for column in columns:
-        table_container.tree.heading(column, text=columns_name[cols_len], anchor=tk.CENTER)
+        table_container.tree.heading(
+            column, text=columns_name[cols_len], anchor=tk.CENTER
+        )
         table_container.tree.column(column, width=75)
 
         cols_len += 1
 
-def setup_table_window(table_container, table_wind):
+
+def setup_table_window(table_container, table_wind, columns_name):
     """Coloca los controles de la ventana del SimpleContainer"""
     table_container.tree.grid(row=0, column=0, columnspan=3, sticky="nsew")
 
@@ -346,7 +353,7 @@ def setup_table_window(table_container, table_wind):
     btn_1 = tk.Button(table_wind, text="Añadir")
     btn_1.bind(
         "<Button-1>",
-        lambda _: spawn_add_window(table_container),
+        lambda _: spawn_add_window(table_container, columns_name),
     )
     btn_1.grid(row=1, column=0)
 
@@ -355,7 +362,7 @@ def setup_table_window(table_container, table_wind):
     btn_2.grid(row=1, column=1)
 
     btn_3 = tk.Button(table_wind, text="Editar")
-    btn_3.bind("<Button-1>", lambda _: spawn_edit_window(table_container))
+    btn_3.bind("<Button-1>", lambda _: spawn_edit_window(table_container, columns_name))
     btn_3.grid(row=1, column=2)
 
 
@@ -384,7 +391,7 @@ def show_table(
     )
 
     create_table_tree(table_container, columns, columns_name)
-    setup_table_window(table_container, table_wind)
+    setup_table_window(table_container, table_wind, columns_name)
 
     core.fill_table(table_container)
 

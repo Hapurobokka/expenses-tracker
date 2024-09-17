@@ -32,6 +32,14 @@ def comma_separated_string(lst: list) -> str:
     return values_string
 
 
+def create_query_placeholder(lst: list[str]) -> str:
+    values_string = []
+    for string in lst:
+        values_string.append(f"{string} = ?")
+
+    return ", ".join(values_string)
+
+
 def create_values_string(times, char="?"):
     """
     Devuelve una string que contiene char la cantidad de veces indicada por times
