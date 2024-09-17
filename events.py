@@ -28,38 +28,41 @@ def validate_fields(fields: list) -> bool:
 
 def perform_add_record(
     container: TreeContainer | SimpleContainer,
-    en_name: tk.Entry,
-    en_amount: tk.Entry,
+    entries: list[tk.Entry],
     register_id: int | None = None,
 ) -> None:
     """Realiza la transacción de añadir un elemento a una tabla"""
-    if not validate_fields([en_name.get(), en_amount.get()]):
+    if not validate_fields([x.get() for x in entries]):
         return
 
-    record_name = en_name.get().upper()
-    try:
-        record_amount = int(en_amount.get())
-    except ValueError:
-        return
+    values = []
+    for entry in entries:
+        val = entry.get()
 
-    if container.table == "products":
+        if val.isdigit():
+            values.append(int(val))
+        else:
+            values.append(val.upper())
+
+    if container.table in ["products", "employees"]:
         core.create_record(
             container.table,
             container.table_values[1:],
-            (record_name, record_amount),
+            tuple(values),
         )
     else:
         core.create_record(
             container.table,
             ["register_id", *container.table_values[1:]],
-            (register_id, record_name, record_amount),
+            (register_id, *values),
         )
 
     core.fill_table(container, register_id)
 
-    en_name.delete(0, tk.END)
-    en_amount.delete(0, tk.END)
-    en_name.focus()
+    for entry in entries:
+        entry.delete(0, tk.END)
+
+    entries[0].focus()
 
 
 def check_valid_selection(tree: ttk.Treeview) -> bool:
@@ -258,21 +261,25 @@ def spawn_add_window(
     add_window = tk.Toplevel()
     add_window.title("Crear nueva entrada")
 
-    tk.Label(add_window, text=labels[0]).pack()
+    entries = []
+    if isinstance(labels, str):
+        tk.Label(add_window, text=labels).pack()
+        entry = tk.Entry(add_window)
+        entry.pack()
+        entries.append(entry)
+    else:
+        for name in labels:
+            tk.Label(add_window, text=name).pack()
+            entry = tk.Entry(add_window)
+            entry.pack()
+            entries.append(entry)
 
-    en_name = tk.Entry(add_window)
-    en_name.focus()
-    en_name.pack()
-
-    tk.Label(add_window, text=labels[1]).pack()
-
-    en_amount = tk.Entry(add_window)
-    en_amount.pack()
+    entries[0].focus()
 
     add_button = tk.Button(add_window, text="Añadir")
     add_button.bind(
         "<Button-1>",
-        lambda _: perform_add_record(container, en_name, en_amount, register_id),
+        lambda _: perform_add_record(container, entries, register_id),
     )
     add_button.pack()
 
