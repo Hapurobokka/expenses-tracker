@@ -16,7 +16,14 @@ from stacks import DisplayStack
 class TreeContainer:
     """Clase que contiene un Frame con un Treeview y varios botones para operar con el"""
 
-    def __init__(self, register_id, root, frame_text, table, table_values) -> None:
+    def __init__(
+        self,
+        register_id: int,
+        root: tk.Tk,
+        frame_text: str,
+        table: str,
+        table_values: list[str],
+    ) -> None:
         # Valores que seran usados para hacer queries a la base de datos
         self.table = table
         self.table_values = table_values
@@ -47,7 +54,7 @@ class TreeContainer:
 
         self.setup_buttons(register_id)
 
-    def setup_tree(self, register_id):
+    def setup_tree(self, register_id: int) -> None:
         """Dispone las columnas y posición del Treeview, además de llenarlo por primera vez"""
         self.tree.grid(row=1, column=0, sticky="nsew", columnspan=3)
 
@@ -63,23 +70,25 @@ class TreeContainer:
 
         self.setup_scrollbar()
 
-    def setup_scrollbar(self):
+    def setup_scrollbar(self) -> None:
         """Coloca una scrollbar en el Treeview del contenedor"""
         vscroll = tk.Scrollbar(self.frame, orient="vertical", command=self.tree.yview)
 
         vscroll.grid(row=1, column=3, sticky="ns")
         self.tree.configure(yscrollcommand=vscroll.set)
 
-    def setup_buttons(self, register_id):
+    def setup_buttons(self, register_id: int) -> None:
         """Coloca los botones en su sitio y les asigna eventos"""
         self.buttons["btn_add"].grid(row=2, column=0)
         self.buttons["btn_add"].bind(
-            "<Button-1>", lambda _: ev.spawn_add_window(self, ("Nombre", "Cantidad"), register_id)
+            "<Button-1>",
+            lambda _: ev.spawn_add_window(self, ("Nombre", "Cantidad"), register_id),
         )
 
         self.buttons["btn_edit"].grid(row=2, column=1)
         self.buttons["btn_edit"].bind(
-            "<Button-1>", lambda _: ev.spawn_edit_window(self, ["Nombre", "Cantidad"], register_id)
+            "<Button-1>",
+            lambda _: ev.spawn_edit_window(self, ["Nombre", "Cantidad"], register_id),
         )
 
         self.buttons["btn_erase"].grid(row=2, column=2)
@@ -87,7 +96,7 @@ class TreeContainer:
             "<Button-1>", lambda _: ev.delete_record_on_click(self, register_id)
         )
 
-    def update_total_var(self, register_id):
+    def update_total_var(self, register_id: int) -> None:
         """Actualiza el valor de la variable que cuenta el total de la tabla"""
         self.total_var.set(core.get_total_amount(self.table, "amount", register_id))
 
@@ -98,7 +107,14 @@ class ProductsContainer(TreeContainer):
     No recomendaria crear varios de estos.
     """
 
-    def __init__(self, register_id, root, frame_text, table, table_values) -> None:
+    def __init__(
+        self,
+        register_id: int,
+        root: tk.Tk,
+        frame_text: str,
+        table: str,
+        table_values: list[str],
+    ) -> None:
         super().__init__(register_id, root, frame_text, table, table_values)
         self.frame_text = "Productos vendidos"
         self.fill_query = """
@@ -108,7 +124,7 @@ class ProductsContainer(TreeContainer):
         WHERE ps.register_id = ?
         """
 
-    def setup_tree(self, register_id):
+    def setup_tree(self, register_id: int) -> None:
         """Dispone las columnas y posición del Treeview, además de llenarlo por primera vez"""
         self.tree = ttk.Treeview(
             self.frame,
@@ -132,7 +148,7 @@ class ProductsContainer(TreeContainer):
 
         self.setup_scrollbar()
 
-    def setup_buttons(self, register_id):
+    def setup_buttons(self, register_id: int) -> None:
         """Coloca los botones en su sitio y les asigna eventos"""
         self.buttons["btn_add"].grid(row=2, column=0)
         self.buttons["btn_add"].bind(
@@ -158,7 +174,7 @@ class ProductsContainer(TreeContainer):
             "<Button-1>", lambda _: ev.delete_record_on_click(self, register_id)
         )
 
-    def update_total_var(self, register_id):
+    def update_total_var(self, register_id: int) -> None:
         self.total_var.set(core.get_total_amount(self.table, "profits", register_id))
 
 
@@ -331,7 +347,7 @@ class TotalsContainer:
         self.profits_stack.label_frame.grid(row=0, column=1, padx=5)
         self.report_stack.label_frame.grid(row=0, column=2, padx=5)
 
-    def add_traces_to_vars(self):
+    def add_traces_to_vars(self) -> None:
         """Añade callbacks a distintas variables de TKInter para que se actualicen al toque"""
         self.containers_variables["machine_variable"].trace_add(
             "write",
@@ -355,7 +371,7 @@ class TotalsContainer:
             "write", lambda *_: self.update_total_profits()
         )
 
-    def update_total_profits(self):
+    def update_total_profits(self) -> None:
         """Actualiza los totales de los ingresos del producto"""
         try:
             initial_funds = int(
@@ -380,7 +396,7 @@ class TotalsContainer:
         self.update_entry(self.profits_stack.stack["products_profits"].element_2)
         self.update_final_reports()
 
-    def update_total_expenses(self, entry):
+    def update_total_expenses(self, entry: tk.Entry) -> None:
         "Actualiza el valor total de los gastos"
         self.total_variables["total_expenses"].set(
             self.containers_variables["machine_variable"].get()
@@ -391,7 +407,7 @@ class TotalsContainer:
         self.update_entry(entry)
         self.update_final_reports()
 
-    def update_final_reports(self):
+    def update_final_reports(self) -> None:
         """Actualiza la sección de reportes finales de la ventana principal"""
         try:
             reported_funds = int(
@@ -453,7 +469,7 @@ class TotalsContainer:
         )
         self.report_stack.stack["reported_funds"].element_2.insert(0, entry_values[2])
 
-    def update_entry(self, entry):
+    def update_entry(self, entry: tk.Entry) -> None:
         """Actualiza una entrada de solo lectura"""
         entry.config(state="normal")
 

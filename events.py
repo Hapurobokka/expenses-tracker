@@ -39,9 +39,9 @@ def perform_add_record(
     for entry in entries:
         val = entry.get()
 
-        if val.isdigit():
+        try:
             values.append(int(val))
-        else:
+        except ValueError:
             values.append(val.upper())
 
     if container.table in ["products", "employees"]:
@@ -262,6 +262,7 @@ def spawn_add_window(
     add_window.title("Crear nueva entrada")
 
     entries = []
+
     if isinstance(labels, str):
         tk.Label(add_window, text=labels).pack()
         entry = tk.Entry(add_window)
@@ -470,7 +471,8 @@ def capture_report(container: TotalsContainer, register_id: int):
 
 
 def refill_containers(
-    containers: dict,
+    containers: dict[str, TreeContainer | ProductsContainer],
+    totals_container: TotalsContainer,
     register_id: int,
 ) -> None:
     """Vuelve a llenar todos los contenedores con el nuevo register_id"""
@@ -479,10 +481,15 @@ def refill_containers(
     core.fill_table(containers["bussiness_container"], register_id)
     core.fill_table(containers["products_container"], register_id)
 
-    containers["totals_container"].fill_entries(register_id)
+    totals_container.fill_entries(register_id)
 
 
-def create_register(entries: dict[str, tk.Entry], containers: dict, root: tk.Toplevel):
+def create_register(
+    entries: dict[str, tk.Entry],
+    containers: dict[str, TreeContainer | ProductsContainer],
+    totals_container: TotalsContainer,
+    root: tk.Toplevel,
+):
     """Creates a new register record with an employee, shift and date"""
     if not validate_fields(
         [entries["employee"].get(), entries["date"].get(), entries["shift"].get()]
@@ -530,11 +537,14 @@ def create_register(entries: dict[str, tk.Entry], containers: dict, root: tk.Top
             register_query, (employee_id, date_id, shift_id)
         )
 
-    refill_containers(containers, register_id[0][0])
+    refill_containers(containers, totals_container, register_id[0][0])
     root.destroy()
 
 
-def spawn_add_register_window(containers):
+def spawn_add_register_window(
+    containers: dict[str, TreeContainer | ProductsContainer],
+    totals_container: TotalsContainer,
+):
     """
     Crea la ventana que se encarga de crear un nuevo turno
 
@@ -574,5 +584,5 @@ def spawn_add_register_window(containers):
     tk.Button(
         wind,
         text="Confirmar",
-        command=lambda: create_register(entries, containers, wind),
+        command=lambda: create_register(entries, containers, totals_container, wind),
     ).grid(row=2, column=1)

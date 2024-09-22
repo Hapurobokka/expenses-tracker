@@ -6,11 +6,12 @@ Por Hapurobokka.
 
 import sqlite3
 import tkinter as tk
+from typing import Any
 
 DATABASE = "database.sqlite3"
 
 
-def run_query(query, parameters=()) -> sqlite3.Cursor:
+def run_query(query: str, parameters: tuple[str | float | int, ...] = ()) -> sqlite3.Cursor:
     """Runs a query for the external database"""
     with sqlite3.connect(DATABASE) as conn:
         cursor = conn.cursor()
@@ -19,13 +20,13 @@ def run_query(query, parameters=()) -> sqlite3.Cursor:
     return result
 
 
-def request_data(query, parameters=()) -> list[tuple]:
+def request_data(query: str, parameters: tuple[Any, ...] = ()) -> list[Any]:
     """Queries the database for the solicited information, then returns a list of tuples"""
     some_cursor = run_query(query, parameters)
     return some_cursor.fetchall()
 
 
-def comma_separated_string(lst: list) -> str:
+def comma_separated_string(lst: list[str]) -> str:
     """Takes a list as an argument. Joins all of it's elements with a comma and space"""
     values_string = ", ".join(lst)
 
@@ -40,7 +41,7 @@ def create_query_placeholder(lst: list[str]) -> str:
     return ", ".join(values_string)
 
 
-def create_values_string(times, char="?"):
+def create_values_string(times: int, char: str = "?") -> str:
     """
     Devuelve una string que contiene char la cantidad de veces indicada por times
     """
@@ -50,7 +51,7 @@ def create_values_string(times, char="?"):
     return ", ".join(char_list)
 
 
-def create_insert_query(table, table_values):
+def create_insert_query(table: str, table_values: list[str]) -> str:
     """Crea una query apropiada para introducir valores en una tabla"""
 
     return f"""
@@ -59,25 +60,25 @@ def create_insert_query(table, table_values):
     """
 
 
-def create_record(table, table_values, values):
+def create_record(table: str, table_values: list[str], values: tuple[Any]):
     """Crea una entrada en la tabla indicada usando los valores pasados como argumento"""
     query = create_insert_query(table, table_values)
     run_query(query, values)
 
 
-def delete_record(table, key, value):
+def delete_record(table: str, key: str, value: Any):
     """Borra una entrada de una tabla utilizando su ID"""
     run_query(f"DELETE FROM {table} WHERE {key} = {value}")
 
 
-def tuples_to_vector(some_tuples):
+def tuples_to_vector(some_tuples: list[tuple[Any]]) -> list[Any]:
     """
     Toma una lista de tuplas y devuelve una lista que contiene solo el primer valor de todas
     ellas"""
     return [tup[0] for tup in some_tuples]
 
 
-def get_total_amount(table, selection, register_id):
+def get_total_amount(table: str, selection: str, register_id: int) -> int:
     """Queries the database for a list of values and then adds them all"""
     query = f"SELECT {selection} FROM {table} WHERE register_id = ?"
     values = request_data(query, (register_id,))
@@ -107,8 +108,11 @@ def fill_table(container, register_id: int | None = None) -> None:
     container.update_total_var(register_id)
 
 
-def get_id(table, field, value):
-    """Gets an id from the database"""
+def get_id(table: str, field: str, value: Any) -> int | None:
+    """
+    Gets an id from the database.
+    On a succesful query returns an int, in an unsuccesful one returns None."""
+
     db_id = request_data(f"SELECT id FROM {table} WHERE {field} = ?", (value,))
 
     try:

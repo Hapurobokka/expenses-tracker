@@ -10,7 +10,7 @@ import events as ev
 import core
 
 
-def get_register_info(root, register_id):
+def get_register_info(root: tk.Tk, register_id: int) -> dict[str, tk.StringVar]:
     """Obtiene toda la información del register_id actual"""
     data_query = """
     SELECT e.employee_name, s.shift_name, d.date
@@ -21,7 +21,7 @@ def get_register_info(root, register_id):
     WHERE r.id = ?
     """
     data = core.request_data(data_query, (register_id,))[0]
-    register_info = {}
+    register_info: dict[str, tk.StringVar] = {}
 
     register_info["employee"] = tk.StringVar(root, value=data[0])
     register_info["shift"] = tk.StringVar(root, value=data[1])
@@ -51,7 +51,7 @@ def create_register_display(root, register_info):
     return frame
 
 
-def get_lastest_register():
+def get_lastest_register() -> int:
     """Obtiene el último register_id de la base de datos"""
     query = """
     SELECT * FROM registers
@@ -62,17 +62,10 @@ def get_lastest_register():
     return core.request_data(query)[0][0]
 
 
-def entry_point(root):
-    """Punto de entrada para el programa"""
-    root.title("Expense Tracker")
-
-    register_id = get_lastest_register()
-
-    register_info = get_register_info(root, register_id)
-
-    total_expenses_frame = tk.Frame(root)
-
-    containers = {}
+def create_containers(
+    root: tk.Tk, register_id: int
+) -> dict[str, TreeContainer | ProductsContainer]:
+    containers: dict[str, TreeContainer | ProductsContainer] = {}
 
     containers["machine_container"] = TreeContainer(
         register_id,
@@ -91,7 +84,6 @@ def entry_point(root):
     containers["bussiness_container"] = TreeContainer(
         register_id, root, "Gastos del negocio", "expenses", ["id", "concept", "amount"]
     )
-
     containers["products_container"] = ProductsContainer(
         register_id,
         root,
@@ -100,7 +92,20 @@ def entry_point(root):
         ["id", "product_id", "in_product", "out_product", "profits"],
     )
 
-    containers["totals_container"] = TotalsContainer(
+    return containers
+
+
+def entry_point(root: tk.Tk):
+    """Punto de entrada para el programa"""
+    root.title("Expense Tracker")
+
+    register_id: int = get_lastest_register()
+    register_info: dict[str, tk.StringVar] = get_register_info(root, register_id)
+
+    containers = create_containers(root, register_id)
+
+    total_expenses_frame = tk.Frame(root)
+    totals_container = TotalsContainer(
         register_id,
         total_expenses_frame,
         containers["machine_container"].total_var,
@@ -116,7 +121,7 @@ def entry_point(root):
 
     tk.Button(
         text="Añadir nuevo registro",
-        command=lambda: ev.spawn_add_register_window(containers),
+        command=lambda: ev.spawn_add_register_window(containers, totals_container),
     ).grid(row=0, column=0)
 
     register_display_frame = create_register_display(root, register_info)
@@ -151,8 +156,8 @@ def entry_point(root):
         row=1, column=2, padx=10, pady=10, sticky="nsew"
     )
 
-    containers["totals_container"].fill_entries(register_id)
-    containers["totals_container"].frame.grid(row=2, column=1, columnspan=2)
+    totals_container.fill_entries(register_id)
+    totals_container.frame.grid(row=2, column=1, columnspan=2)
 
 
 window = tk.Tk()
