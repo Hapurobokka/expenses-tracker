@@ -12,6 +12,7 @@ import core
 
 def get_register_info(root: tk.Tk, register_id: int) -> dict[str, tk.StringVar]:
     """Obtiene toda la información del register_id actual"""
+
     data_query = """
     SELECT e.employee_name, s.shift_name, d.date
     FROM registers r
@@ -20,9 +21,11 @@ def get_register_info(root: tk.Tk, register_id: int) -> dict[str, tk.StringVar]:
     JOIN dates d ON d.id = r.date_id
     WHERE r.id = ?
     """
+
     data = core.request_data(data_query, (register_id,))[0]
     register_info: dict[str, tk.StringVar] = {}
 
+    # usamos mucho diccionarios ou yeah
     register_info["employee"] = tk.StringVar(root, value=data[0])
     register_info["shift"] = tk.StringVar(root, value=data[1])
     register_info["date"] = tk.StringVar(root, value=data[2])
@@ -34,6 +37,7 @@ def create_register_display(root, register_info):
     """Crea un frame donde se mostrara la información del register_id actual"""
     frame = tk.Frame(root)
 
+    # usa frames o label frames siempre que puedas, de hecho son utiles
     employee_frame = tk.LabelFrame(frame, text="Empleado")
     employee_frame.grid(row=0, column=0)
     tk.Label(employee_frame, textvariable=register_info["employee"]).grid(
@@ -62,9 +66,28 @@ def get_lastest_register() -> int:
     return core.request_data(query)[0][0]
 
 
+def create_controlers_frame(root):
+    controlers_frame = tk.Frame(root)
+    employees_button = tk.Button(controlers_frame, text="Mostrar empleados")
+    employees_button.grid(row=0, column=0)
+    employees_button.bind(
+        "<Button-1>",
+        lambda _: ev.show_table(
+            "employees",
+            ["id", "employee_name"],
+            "Ver empleados",
+            "employee",
+            "Empleado",
+        ),
+    )
+
+    return controlers_frame
+
+
 def create_containers(
     root: tk.Tk, register_id: int
 ) -> dict[str, TreeContainer | ProductsContainer]:
+    """Crea los contendores"""
     containers: dict[str, TreeContainer | ProductsContainer] = {}
 
     containers["machine_container"] = TreeContainer(
@@ -104,6 +127,7 @@ def entry_point(root: tk.Tk):
 
     containers = create_containers(root, register_id)
 
+    # este necesitamos crearlo aparte porque no es similar a los otros tipos de contendor
     total_expenses_frame = tk.Frame(root)
     totals_container = TotalsContainer(
         register_id,
@@ -114,6 +138,7 @@ def entry_point(root: tk.Tk):
         containers["products_container"].total_var,
     )
 
+    # no recuerdo porque tenemos que llamar esto aqui
     containers["machine_container"].setup_tree(register_id)
     containers["replenish_container"].setup_tree(register_id)
     containers["bussiness_container"].setup_tree(register_id)
@@ -127,20 +152,7 @@ def entry_point(root: tk.Tk):
     register_display_frame = create_register_display(root, register_info)
     register_display_frame.grid(row=0, column=1)
 
-    controlers_frame = tk.Frame(root)
-    employees_button = tk.Button(controlers_frame, text="Mostrar empleados")
-    employees_button.grid(row=0, column=0)
-    employees_button.bind(
-        "<Button-1>",
-        lambda _: ev.show_table(
-            "employees",
-            ["id", "employee_name"],
-            "Ver empleados",
-            "employee",
-            "Empleado",
-        ),
-    )
-
+    controlers_frame = create_controlers_frame(root)
     controlers_frame.grid(row=0, column=2)
 
     containers["machine_container"].frame.grid(

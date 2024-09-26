@@ -10,3 +10,4 @@ tags
 tags
 tests/
 database.sqlite3
+/.venv

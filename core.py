@@ -60,7 +60,7 @@ def create_insert_query(table: str, table_values: list[str]) -> str:
     """
 
 
-def create_record(table: str, table_values: list[str], values: tuple[Any]):
+def create_record(table: str, table_values: list[str], values: tuple):
     """Crea una entrada en la tabla indicada usando los valores pasados como argumento"""
     query = create_insert_query(table, table_values)
     run_query(query, values)
