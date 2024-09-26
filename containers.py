@@ -58,6 +58,7 @@ class TreeContainer:
         """Dispone las columnas y posición del Treeview, además de llenarlo por primera vez"""
         self.tree.grid(row=1, column=0, sticky="nsew", columnspan=3)
 
+        # de una manera interesante treeview tiene una primer columna #0 que no podemos ignorar
         self.tree.heading("#0", text="ID", anchor=tk.CENTER)
         self.tree.heading("name", text="Nombre", anchor=tk.CENTER)
         self.tree.heading("amount", text="Cantidad", anchor=tk.CENTER)
@@ -115,8 +116,8 @@ class ProductsContainer(TreeContainer):
         table: str,
         table_values: list[str],
     ) -> None:
+        # todos los atributos de la clase padre nos interesan, excepto la fill_query que es especial
         super().__init__(register_id, root, frame_text, table, table_values)
-        self.frame_text = "Productos vendidos"
         self.fill_query = """
         SELECT ps.id, p.product_name, ps.in_product, ps.out_product, ps.profits
         FROM products_sales ps
@@ -151,6 +152,7 @@ class ProductsContainer(TreeContainer):
     def setup_buttons(self, register_id: int) -> None:
         """Coloca los botones en su sitio y les asigna eventos"""
         self.buttons["btn_add"].grid(row=2, column=0)
+        # esta clase esa su propia variante de spawn_add_window
         self.buttons["btn_add"].bind(
             "<Button-1>",
             lambda _: ev.spawn_product_report_window(self, register_id),
@@ -198,8 +200,6 @@ class TotalsContainer:
             "bussiness_variable": bussiness_variable,
             "products_variable": products_variable,
         }
-
-        # Y definimos nuestro total en un inicio
 
         self.total_variables = {
             "total_expenses": tk.IntVar(frame, value=0),

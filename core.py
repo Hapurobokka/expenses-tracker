@@ -4,14 +4,20 @@ Operaciones donde usamos la base de datos. No se usar bases de datos.
 Por Hapurobokka.
 """
 
+from __future__ import annotations
 import sqlite3
 import tkinter as tk
-from typing import Any
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from containers import TreeContainer, ProductsContainer, SimpleContainer
 
 DATABASE = "database.sqlite3"
 
 
-def run_query(query: str, parameters: tuple[str | float | int, ...] = ()) -> sqlite3.Cursor:
+def run_query(
+    query: str, parameters: tuple[str | float | int, ...] = ()
+) -> sqlite3.Cursor:
     """Runs a query for the external database"""
     with sqlite3.connect(DATABASE) as conn:
         cursor = conn.cursor()
@@ -89,7 +95,10 @@ def get_total_amount(table: str, selection: str, register_id: int) -> int:
     return sum(tuples_to_vector(values))
 
 
-def fill_table(container, register_id: int | None = None) -> None:
+def fill_table(
+    container: TreeContainer | SimpleContainer | ProductsContainer,
+    register_id: int | None = None,
+) -> None:
     """Queries the database for data and writes it on a treeview"""
     for element in container.tree.get_children():
         container.tree.delete(element)
@@ -105,7 +114,7 @@ def fill_table(container, register_id: int | None = None) -> None:
     if container.table in ["products", "employees"]:
         return
 
-    container.update_total_var(register_id)
+    container.update_total_var(register_id)  # type: ignore
 
 
 def get_id(table: str, field: str, value: Any) -> int | None:
