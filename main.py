@@ -144,6 +144,7 @@ def entry_point(root: tk.Tk):
     containers["bussiness_container"].setup_tree(register_id)
     containers["products_container"].setup_tree(register_id)
 
+    # colocamos los controles en la ventana
     tk.Button(
         text="Añadir nuevo registro",
         command=lambda: ev.spawn_add_register_window(containers, totals_container),
@@ -168,6 +169,7 @@ def entry_point(root: tk.Tk):
         row=1, column=2, padx=10, pady=10, sticky="nsew"
     )
 
+    # y llenamos las entradas
     totals_container.fill_entries(register_id)
     totals_container.frame.grid(row=2, column=1, columnspan=2)
 

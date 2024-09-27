@@ -26,6 +26,17 @@ def validate_fields(fields: list) -> bool:
     return all(len(x) != 0 for x in fields)
 
 
+def check_valid_selection(tree: ttk.Treeview) -> bool:
+    """Revisa si hay un elemento seleccionado en el Treeview pasado como argumento"""
+    try:
+        selected_item = tree.selection()[0]
+        _ = tree.item(selected_item)["values"][0]
+    except IndexError:
+        return False
+
+    return True
+
+
 def perform_add_record(
     container: TreeContainer | SimpleContainer,
     entries: list[tk.Entry],
@@ -65,25 +76,41 @@ def perform_add_record(
     entries[0].focus()
 
 
-def check_valid_selection(tree: ttk.Treeview) -> bool:
-    """Revisa si hay un elemento seleccionado en el Treeview pasado como argumento"""
+def perform_add_products_record(
+    combo: ttk.Combobox, fields: list, container: TreeContainer, register_id: int
+) -> None:
+    """Añade una entrada a la tabla de ventas de productos"""
+    if not validate_fields([combo.get(), fields[0].get(), fields[1].get()]):
+        return
+
+    profits = get_profits(combo, fields)
+    product_id = core.request_data(
+        "SELECT id FROM products WHERE product_name = ?", (combo.get(),)
+    )[0][0]
+
     try:
-        selected_item = tree.selection()[0]
-        _ = tree.item(selected_item)["values"][0]
-    except IndexError:
-        return False
+        in_product = int(fields[0].get())
+        out_product = int(fields[1].get())
+    except ValueError:
+        return
 
-    return True
+    core.create_record(
+        "products_sales",
+        ["register_id", "product_id", "in_product", "out_product", "profits"],
+        (register_id, product_id, in_product, out_product, profits),
+    )
+
+    core.fill_table(container, register_id)
 
 
-def delete_record_on_click(
+def perform_delete_selected_record(
     container: TreeContainer | SimpleContainer, register_id: int | None = None
 ) -> None:
     """Borra una entrada de la lista"""
     if not check_valid_selection(container.tree):
         return
 
-    record_id = container.tree.item(container.tree.selection())["text"]  # type: ignore
+    record_id = container.tree.item(container.tree.selection()[0])["text"]
 
     core.delete_record(container.table, "id", record_id)
     core.fill_table(container, register_id)
@@ -156,33 +183,6 @@ def create_profits(
     entry.config(state="readonly")
 
 
-def add_products_record(
-    combo: ttk.Combobox, fields: list, container: TreeContainer, register_id: int
-) -> None:
-    """Añade una entrada a la tabla de ventas de productos"""
-    if not validate_fields([combo.get(), fields[0].get(), fields[1].get()]):
-        return
-
-    profits = get_profits(combo, fields)
-    product_id = core.request_data(
-        "SELECT id FROM products WHERE product_name = ?", (combo.get(),)
-    )[0][0]
-
-    try:
-        in_product = int(fields[0].get())
-        out_product = int(fields[1].get())
-    except ValueError:
-        return
-
-    core.create_record(
-        "products_sales",
-        ["register_id", "product_id", "in_product", "out_product", "profits"],
-        (register_id, product_id, in_product, out_product, profits),
-    )
-
-    core.fill_table(container, register_id)
-
-
 def spawn_product_report_window(container: ProductsContainer, register_id: int) -> None:
     """Crea la ventana que permite añadir un reporte de ventas de un producto"""
     query = "SELECT product_name FROM products"
@@ -224,7 +224,7 @@ def spawn_product_report_window(container: ProductsContainer, register_id: int) 
 
     add_button.bind(
         "<Button-1>",
-        lambda _: add_products_record(
+        lambda _: perform_add_products_record(
             combo, [entry_1, entry_2], container, register_id
         ),
     )
@@ -366,7 +366,7 @@ def setup_table_window(table_container, table_wind, columns_name):
     btn_1.grid(row=1, column=0)
 
     btn_2 = tk.Button(table_wind, text="Borrar")
-    btn_2.bind("<Button-1>", lambda _: delete_record_on_click(table_container))
+    btn_2.bind("<Button-1>", lambda _: perform_delete_selected_record(table_container))
     btn_2.grid(row=1, column=1)
 
     btn_3 = tk.Button(table_wind, text="Editar")
@@ -404,45 +404,35 @@ def show_table(
     core.fill_table(table_container)
 
 
-def capture_report(container: TotalsContainer, register_id: int):
-    """Captura los valores del TotalsContainer en el registro asociado"""
-    confirmation = messagebox.askyesno(
-        "Confirmación", "¿Estás seguro de que quieres capturar este turno?"
+def create_new_report(container: TotalsContainer, register_id: int) -> None:
+    """Crea una nueva entrada en la tabla de registros"""
+    core.create_record(
+        "daily_reports",
+        [
+            "register_id",
+            "final_profits",
+            "final_expenses",
+            "total_funds",
+            "initial_funds",
+            "extra_funds",
+            "reported_funds",
+            "difference",
+        ],
+        (
+            register_id,
+            container.total_variables["total_profits"].get(),
+            container.total_variables["total_expenses"].get(),
+            container.total_variables["expected_funds"].get(),
+            container.profits_stack.stack["initial_funds"].element_2.get(),
+            container.profits_stack.stack["additional_funds"].element_2.get(),
+            container.report_stack.stack["reported_funds"].element_2.get(),
+            container.total_variables["difference"].get(),
+        ),
     )
 
-    if not confirmation:
-        return
 
-    query = """SELECT * FROM daily_reports WHERE register_id = ?"""
-    current_register = core.request_data(query, (register_id,))
-
-    if current_register == []:
-        core.create_record(
-            "daily_reports",
-            [
-                "register_id",
-                "final_profits",
-                "final_expenses",
-                "total_funds",
-                "initial_funds",
-                "extra_funds",
-                "reported_funds",
-                "difference",
-            ],
-            (
-                register_id,
-                container.total_variables["total_profits"].get(),
-                container.total_variables["total_expenses"].get(),
-                container.total_variables["expected_funds"].get(),
-                container.profits_stack.stack["initial_funds"].element_2.get(),
-                container.profits_stack.stack["additional_funds"].element_2.get(),
-                container.report_stack.stack["reported_funds"].element_2.get(),
-                container.total_variables["difference"].get(),
-            ),
-        )
-
-        return
-
+def update_current_report(container: TotalsContainer, register_id: int) -> None:
+    """Crea una entrada que coincide con el id de registro en la tabla de registros"""
     update_query = """
     UPDATE daily_reports
     SET 
@@ -468,6 +458,24 @@ def capture_report(container: TotalsContainer, register_id: int):
             register_id,
         ),
     )
+
+
+def capture_report(container: TotalsContainer, register_id: int) -> None:
+    """Captura los valores del TotalsContainer en el registro asociado"""
+    confirmation = messagebox.askyesno(
+        "Confirmación", "¿Estás seguro de que quieres capturar este turno?"
+    )
+
+    if not confirmation:
+        return
+
+    query = """SELECT * FROM daily_reports WHERE register_id = ?"""
+    current_register = core.request_data(query, (register_id,))
+
+    if current_register == []:
+        create_new_report(container, register_id)
+    else:
+        update_current_report(container, register_id)
 
 
 def refill_containers(
@@ -547,8 +555,6 @@ def spawn_add_register_window(
 ):
     """
     Crea la ventana que se encarga de crear un nuevo turno
-
-    Esto esta en main porque básicamente me puede joder
     """
     wind = tk.Toplevel()
     wind.title("Crear un nuevo turno")
