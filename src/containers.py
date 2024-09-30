@@ -186,13 +186,12 @@ class TotalsContainer:
     def __init__(
         self,
         register_id: int,
-        frame: tk.Frame,
         machine_variable: tk.IntVar,
         replenish_variable: tk.IntVar,
         bussiness_variable: tk.IntVar,
         products_variable: tk.IntVar,
     ) -> None:
-        self.frame = frame
+        self.frame = tk.Frame()
 
         self.containers_variables = {
             "machine_variable": machine_variable,
@@ -202,11 +201,11 @@ class TotalsContainer:
         }
 
         self.total_variables = {
-            "total_expenses": tk.IntVar(frame, value=0),
-            "total_profits": tk.IntVar(frame, value=0),
-            "expected_funds": tk.IntVar(frame, value=0),
-            "balance": tk.IntVar(frame, value=0),
-            "difference": tk.IntVar(frame, value=0),
+            "total_expenses": tk.IntVar(self.frame, value=0),
+            "total_profits": tk.IntVar(self.frame, value=0),
+            "expected_funds": tk.IntVar(self.frame, value=0),
+            "balance": tk.IntVar(self.frame, value=0),
+            "difference": tk.IntVar(self.frame, value=0),
         }
 
         # Definimos traces para cada uno de estos valores
@@ -329,7 +328,7 @@ class TotalsContainer:
             label_width=13,
         )
 
-        btn_capture = tk.Button(frame, text="Capturar datos")
+        btn_capture = tk.Button(self.frame, text="Capturar datos")
         btn_capture.grid(row=1, column=1, pady=5)
         btn_capture.bind("<Button-1>", lambda *_: ev.capture_report(self, register_id))
 

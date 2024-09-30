@@ -1,179 +1,171 @@
 """
-Archivo principal del programa de momento. Ahora usamos clases como una persona normal.
+Definición de la ventana principal del programa. Ahora con clases.
 
-Por Hapurobokka.
+Hecho por Hapurobokka
 """
 
 import tkinter as tk
 from containers import TreeContainer, ProductsContainer, TotalsContainer
-import events as ev
 import core
+import events as ev
 
 
-def get_register_info(root: tk.Tk, register_id: int) -> dict[str, tk.StringVar]:
-    """Obtiene toda la información del register_id actual"""
+class App:
+    """Punto de inicio del programa"""
+    def __init__(self, root: tk.Tk):
+        self.root = root
+        self.register_id = self.__get_latest_register()
+        self.containers = self.__create_containers()
+        self.totals_container = TotalsContainer(
+            self.register_id,
+            self.containers["machine_container"].total_var,
+            self.containers["replenish_container"].total_var,
+            self.containers["bussiness_container"].total_var,
+            self.containers["products_container"].total_var,
+        )
+        self.register_info = self.__get_register_info()
 
-    data_query = """
-    SELECT e.employee_name, s.shift_name, d.date
-    FROM registers r
-    JOIN employees e ON e.id = r.employee_id
-    JOIN shifts s ON s.id = r.shift_id
-    JOIN dates d ON d.id = r.date_id
-    WHERE r.id = ?
-    """
+    def __get_latest_register(self) -> int:
+        """Obtiene la última id de registro de la base de datos"""
+        query = """
+        SELECT * FROM registers
+        ORDER BY id DESC
+        LIMIT 1
+        """
 
-    data = core.request_data(data_query, (register_id,))[0]
-    register_info: dict[str, tk.StringVar] = {}
+        return core.request_data(query)[0][0]
 
-    # usamos mucho diccionarios ou yeah
-    register_info["employee"] = tk.StringVar(root, value=data[0])
-    register_info["shift"] = tk.StringVar(root, value=data[1])
-    register_info["date"] = tk.StringVar(root, value=data[2])
+    def __create_containers(self) -> dict[str, TreeContainer | ProductsContainer]:
+        containers: dict[str, TreeContainer | ProductsContainer] = {}
 
-    return register_info
+        containers["machine_container"] = TreeContainer(
+            self.register_id,
+            self.root,
+            "Premios de maquinas",
+            "machine_table",
+            ["id", "machine_name", "amount"],
+        )
+        containers["replenish_container"] = TreeContainer(
+            self.register_id,
+            self.root,
+            "Reposiciones de maquinas",
+            "replenishments",
+            ["id", "machine_name", "amount"],
+        )
+        containers["bussiness_container"] = TreeContainer(
+            self.register_id,
+            self.root,
+            "Gastos del negocio",
+            "expenses",
+            ["id", "concept", "amount"],
+        )
+        containers["products_container"] = ProductsContainer(
+            self.register_id,
+            self.root,
+            "Productos vendidos",
+            "products_sales",
+            ["id", "product_id", "in_product", "out_product", "profits"],
+        )
 
+        return containers
 
-def create_register_display(root, register_info):
-    """Crea un frame donde se mostrara la información del register_id actual"""
-    frame = tk.Frame(root)
+    def __get_register_info(self) -> dict[str, tk.StringVar]:
+        data_query = """
+        SELECT e.employee_name, s.shift_name, d.date
+        FROM registers r
+        JOIN employees e ON e.id = r.employee_id
+        JOIN shifts s ON s.id = r.shift_id
+        JOIN dates d ON d.id = r.date_id
+        WHERE r.id = ?
+        """
 
-    # usa frames o label frames siempre que puedas, de hecho son utiles
-    employee_frame = tk.LabelFrame(frame, text="Empleado")
-    employee_frame.grid(row=0, column=0)
-    tk.Label(employee_frame, textvariable=register_info["employee"]).grid(
-        row=0, column=0
-    )
+        data = core.request_data(data_query, (self.register_id,))[0]
+        register_info: dict[str, tk.StringVar] = {}
 
-    shift_frame = tk.LabelFrame(frame, text="Turno")
-    shift_frame.grid(row=0, column=1)
-    tk.Label(shift_frame, textvariable=register_info["shift"]).grid(row=0, column=0)
+        # usamos mucho diccionarios ou yeah
+        register_info["employee"] = tk.StringVar(self.root, value=data[0])
+        register_info["shift"] = tk.StringVar(self.root, value=data[1])
+        register_info["date"] = tk.StringVar(self.root, value=data[2])
 
-    date_frame = tk.LabelFrame(frame, text="Fecha")
-    date_frame.grid(row=0, column=2)
-    tk.Label(date_frame, textvariable=register_info["date"]).grid(row=0, column=0)
+        return register_info
 
-    return frame
+    def __create_controlers_frame(self):
+        controlers_frame = tk.Frame(self.root)
+        employees_button = tk.Button(controlers_frame, text="Mostrar empleados")
+        employees_button.grid(row=0, column=0)
+        employees_button.bind(
+            "<Button-1>",
+            lambda _: ev.show_table(
+                "employees",
+                ["id", "employee_name"],
+                "Ver empleados",
+                "employee",
+                "Empleado",
+            ),
+        )
 
+        return controlers_frame
 
-def get_lastest_register() -> int:
-    """Obtiene el último register_id de la base de datos"""
-    query = """
-    SELECT * FROM registers
-    ORDER BY id DESC
-    LIMIT 1
-    """
+    def __create_register_display(self):
+        """Crea un frame donde se mostrara la información del register_id actual"""
+        frame = tk.Frame(self.root)
 
-    return core.request_data(query)[0][0]
+        # usa frames o label frames siempre que puedas, de hecho son utiles
+        employee_frame = tk.LabelFrame(frame, text="Empleado")
+        employee_frame.grid(row=0, column=0)
+        tk.Label(employee_frame, textvariable=self.register_info["employee"]).grid(
+            row=0, column=0
+        )
 
+        shift_frame = tk.LabelFrame(frame, text="Turno")
+        shift_frame.grid(row=0, column=1)
+        tk.Label(shift_frame, textvariable=self.register_info["shift"]).grid(row=0, column=0)
 
-def create_controlers_frame(root):
-    controlers_frame = tk.Frame(root)
-    employees_button = tk.Button(controlers_frame, text="Mostrar empleados")
-    employees_button.grid(row=0, column=0)
-    employees_button.bind(
-        "<Button-1>",
-        lambda _: ev.show_table(
-            "employees",
-            ["id", "employee_name"],
-            "Ver empleados",
-            "employee",
-            "Empleado",
-        ),
-    )
+        date_frame = tk.LabelFrame(frame, text="Fecha")
+        date_frame.grid(row=0, column=2)
+        tk.Label(date_frame, textvariable=self.register_info["date"]).grid(row=0, column=0)
 
-    return controlers_frame
+        return frame
 
+    def render(self) -> None:
+        """Renderiza la ventana"""
+        self.root.title("Expense Tracker")
 
-def create_containers(
-    root: tk.Tk, register_id: int
-) -> dict[str, TreeContainer | ProductsContainer]:
-    """Crea los contendores"""
-    containers: dict[str, TreeContainer | ProductsContainer] = {}
+        self.containers["machine_container"].setup_tree(self.register_id)
+        self.containers["replenish_container"].setup_tree(self.register_id)
+        self.containers["bussiness_container"].setup_tree(self.register_id)
+        self.containers["products_container"].setup_tree(self.register_id)
 
-    containers["machine_container"] = TreeContainer(
-        register_id,
-        root,
-        "Premios de maquinas",
-        "machine_table",
-        ["id", "machine_name", "amount"],
-    )
-    containers["replenish_container"] = TreeContainer(
-        register_id,
-        root,
-        "Reposiciones de maquinas",
-        "replenishments",
-        ["id", "machine_name", "amount"],
-    )
-    containers["bussiness_container"] = TreeContainer(
-        register_id, root, "Gastos del negocio", "expenses", ["id", "concept", "amount"]
-    )
-    containers["products_container"] = ProductsContainer(
-        register_id,
-        root,
-        "Productos vendidos",
-        "products_sales",
-        ["id", "product_id", "in_product", "out_product", "profits"],
-    )
+        tk.Button(
+            text="Añadir nuevo registro",
+            command=lambda: ev.spawn_add_register_window(self.containers, self.totals_container),
+        ).grid(row=0, column=0)
 
-    return containers
+        register_display_frame = self.__create_register_display()
+        register_display_frame.grid(row=0, column=1)
 
+        controlers_frame = self.__create_controlers_frame()
+        controlers_frame.grid(row=0, column=2)
 
-def entry_point(root: tk.Tk):
-    """Punto de entrada para el programa"""
-    root.title("Expense Tracker")
+        self.containers["machine_container"].frame.grid(
+            row=1, column=0, padx=10, pady=10, sticky="nsew"
+        )
+        self.containers["replenish_container"].frame.grid(
+            row=2, column=0, padx=10, pady=10, sticky="nsew"
+        )
+        self.containers["bussiness_container"].frame.grid(
+            row=1, column=1, padx=10, pady=10, sticky="nsew"
+        )
+        self.containers["products_container"].frame.grid(
+            row=1, column=2, padx=10, pady=10, sticky="nsew"
+        )
 
-    register_id: int = get_lastest_register()
-    register_info: dict[str, tk.StringVar] = get_register_info(root, register_id)
-
-    containers = create_containers(root, register_id)
-
-    # este necesitamos crearlo aparte porque no es similar a los otros tipos de contendor
-    total_expenses_frame = tk.Frame(root)
-    totals_container = TotalsContainer(
-        register_id,
-        total_expenses_frame,
-        containers["machine_container"].total_var,
-        containers["replenish_container"].total_var,
-        containers["bussiness_container"].total_var,
-        containers["products_container"].total_var,
-    )
-
-    # no recuerdo porque tenemos que llamar esto aqui
-    containers["machine_container"].setup_tree(register_id)
-    containers["replenish_container"].setup_tree(register_id)
-    containers["bussiness_container"].setup_tree(register_id)
-    containers["products_container"].setup_tree(register_id)
-
-    # colocamos los controles en la ventana
-    tk.Button(
-        text="Añadir nuevo registro",
-        command=lambda: ev.spawn_add_register_window(containers, totals_container),
-    ).grid(row=0, column=0)
-
-    register_display_frame = create_register_display(root, register_info)
-    register_display_frame.grid(row=0, column=1)
-
-    controlers_frame = create_controlers_frame(root)
-    controlers_frame.grid(row=0, column=2)
-
-    containers["machine_container"].frame.grid(
-        row=1, column=0, padx=10, pady=10, sticky="nsew"
-    )
-    containers["replenish_container"].frame.grid(
-        row=2, column=0, padx=10, pady=10, sticky="nsew"
-    )
-    containers["bussiness_container"].frame.grid(
-        row=1, column=1, padx=10, pady=10, sticky="nsew"
-    )
-    containers["products_container"].frame.grid(
-        row=1, column=2, padx=10, pady=10, sticky="nsew"
-    )
-
-    # y llenamos las entradas
-    totals_container.fill_entries(register_id)
-    totals_container.frame.grid(row=2, column=1, columnspan=2)
+        # y llenamos las entradas
+        self.totals_container.fill_entries(self.register_id)
+        self.totals_container.frame.grid(row=2, column=1, columnspan=2)
 
 
 window = tk.Tk()
-entry_point(window)
+app = App(window)
+app.render()
 window.mainloop()
