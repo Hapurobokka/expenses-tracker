@@ -12,6 +12,7 @@ import events as ev
 
 class App:
     """Punto de inicio del programa"""
+
     def __init__(self, root: tk.Tk):
         self.root = root
         self.register_id = self.__get_latest_register()
@@ -39,30 +40,22 @@ class App:
         containers: dict[str, TreeContainer | ProductsContainer] = {}
 
         containers["machine_container"] = TreeContainer(
-            self.register_id,
             self.root,
-            "Premios de maquinas",
             "machine_table",
             ["id", "machine_name", "amount"],
         )
         containers["replenish_container"] = TreeContainer(
-            self.register_id,
             self.root,
-            "Reposiciones de maquinas",
             "replenishments",
             ["id", "machine_name", "amount"],
         )
         containers["bussiness_container"] = TreeContainer(
-            self.register_id,
             self.root,
-            "Gastos del negocio",
             "expenses",
             ["id", "concept", "amount"],
         )
         containers["products_container"] = ProductsContainer(
-            self.register_id,
             self.root,
-            "Productos vendidos",
             "products_sales",
             ["id", "product_id", "in_product", "out_product", "profits"],
         )
@@ -95,7 +88,7 @@ class App:
         employees_button.grid(row=0, column=0)
         employees_button.bind(
             "<Button-1>",
-            lambda _: ev.show_table(
+            lambda _: ev.show_table_window(
                 "employees",
                 ["id", "employee_name"],
                 "Ver empleados",
@@ -119,11 +112,15 @@ class App:
 
         shift_frame = tk.LabelFrame(frame, text="Turno")
         shift_frame.grid(row=0, column=1)
-        tk.Label(shift_frame, textvariable=self.register_info["shift"]).grid(row=0, column=0)
+        tk.Label(shift_frame, textvariable=self.register_info["shift"]).grid(
+            row=0, column=0
+        )
 
         date_frame = tk.LabelFrame(frame, text="Fecha")
         date_frame.grid(row=0, column=2)
-        tk.Label(date_frame, textvariable=self.register_info["date"]).grid(row=0, column=0)
+        tk.Label(date_frame, textvariable=self.register_info["date"]).grid(
+            row=0, column=0
+        )
 
         return frame
 
@@ -131,14 +128,24 @@ class App:
         """Renderiza la ventana"""
         self.root.title("Expense Tracker")
 
-        self.containers["machine_container"].setup_tree(self.register_id)
-        self.containers["replenish_container"].setup_tree(self.register_id)
-        self.containers["bussiness_container"].setup_tree(self.register_id)
-        self.containers["products_container"].setup_tree(self.register_id)
+        self.containers["machine_container"].render(
+            "Premios de maquinas", self.register_id
+        )
+        self.containers["replenish_container"].render(
+            "Reposiciones de maquinas", self.register_id
+        )
+        self.containers["bussiness_container"].render(
+            "Gastos del negocio", self.register_id
+        )
+        self.containers["products_container"].render(
+            "Productos vendidos", self.register_id
+        )
 
         tk.Button(
             text="Añadir nuevo registro",
-            command=lambda: ev.spawn_add_register_window(self.containers, self.totals_container),
+            command=lambda: ev.spawn_add_register_window(
+                self.containers, self.totals_container
+            ),
         ).grid(row=0, column=0)
 
         register_display_frame = self.__create_register_display()

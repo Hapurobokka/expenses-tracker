@@ -374,7 +374,7 @@ def setup_table_window(table_container, table_wind, columns_name):
     btn_3.grid(row=1, column=2)
 
 
-def show_table(
+def show_table_window(
     table: str,
     table_values: list[str],
     message: str,

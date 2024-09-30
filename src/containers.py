@@ -18,9 +18,7 @@ class TreeContainer:
 
     def __init__(
         self,
-        register_id: int,
         root: tk.Tk,
-        frame_text: str,
         table: str,
         table_values: list[str],
     ) -> None:
@@ -37,9 +35,6 @@ class TreeContainer:
         # Creamos un frame para acomodar todos los elementos del contenedor
         self.frame = tk.Frame(root)
 
-        # Creamos un frame label que es solo una label literalmente
-        tk.Label(self.frame, text=frame_text).grid(row=0, column=0, columnspan=3)
-
         self.total_var = tk.IntVar(root, value=0)
 
         # Creamos el treeview
@@ -51,8 +46,6 @@ class TreeContainer:
             "btn_erase": tk.Button(self.frame, text="Eliminar"),
             "btn_edit": tk.Button(self.frame, text="Editar"),
         }
-
-        self.setup_buttons(register_id)
 
     def setup_tree(self, register_id: int) -> None:
         """Dispone las columnas y posición del Treeview, además de llenarlo por primera vez"""
@@ -68,8 +61,6 @@ class TreeContainer:
         self.tree.column("amount", width=90)
 
         core.fill_table(self, register_id)
-
-        self.setup_scrollbar()
 
     def setup_scrollbar(self) -> None:
         """Coloca una scrollbar en el Treeview del contenedor"""
@@ -101,6 +92,13 @@ class TreeContainer:
         """Actualiza el valor de la variable que cuenta el total de la tabla"""
         self.total_var.set(core.get_total_amount(self.table, "amount", register_id))
 
+    def render(self, frame_text: str, register_id: int) -> None:
+        """Renderiza el componente"""
+        tk.Label(self.frame, text=frame_text).grid(row=0, column=0, columnspan=3)
+        self.setup_buttons(register_id)
+        self.setup_scrollbar()
+        self.setup_tree(register_id)
+
 
 class ProductsContainer(TreeContainer):
     """
@@ -110,14 +108,12 @@ class ProductsContainer(TreeContainer):
 
     def __init__(
         self,
-        register_id: int,
         root: tk.Tk,
-        frame_text: str,
         table: str,
         table_values: list[str],
     ) -> None:
         # todos los atributos de la clase padre nos interesan, excepto la fill_query que es especial
-        super().__init__(register_id, root, frame_text, table, table_values)
+        super().__init__(root, table, table_values)
         self.fill_query = """
         SELECT ps.id, p.product_name, ps.in_product, ps.out_product, ps.profits
         FROM products_sales ps
@@ -152,7 +148,8 @@ class ProductsContainer(TreeContainer):
     def setup_buttons(self, register_id: int) -> None:
         """Coloca los botones en su sitio y les asigna eventos"""
         self.buttons["btn_add"].grid(row=2, column=0)
-        # esta clase esa su propia variante de spawn_add_window
+
+        # esta clase es su propia variante de spawn_add_window
         self.buttons["btn_add"].bind(
             "<Button-1>",
             lambda _: ev.spawn_product_report_window(self, register_id),
@@ -162,7 +159,7 @@ class ProductsContainer(TreeContainer):
         self.buttons["btn_edit"]["text"] = "Mostrar productos"
         self.buttons["btn_edit"].bind(
             "<Button-1>",
-            lambda _: ev.show_table(
+            lambda _: ev.show_table_window(
                 "products",
                 ["id", "product_name", "price"],
                 "Ver productos en venta",
