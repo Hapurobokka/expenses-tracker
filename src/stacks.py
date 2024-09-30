@@ -10,15 +10,28 @@ from dataclasses import dataclass
 
 @dataclass
 class LabelPair:
-    """Un par de una tk.label y una tk.entry, o dos tk.labels"""
+    """Un par de tk.labels"""
 
-    element_1: tk.Label
-    element_2: tk.Entry | tk.Label
+    label_1: tk.Label
+    label_2: tk.Entry | tk.Label
 
-    def place(self, label_pos, entry_pos):
+    def render(self, label1_pos: tuple[int, int], label2_pos: tuple[int, int]) -> None:
         """Coloca el elemento en la posición asignada"""
-        self.element_1.grid(row=label_pos[0], column=label_pos[1])
-        self.element_2.grid(row=entry_pos[0], column=entry_pos[1])
+        self.label_1.grid(row=label1_pos[0], column=label1_pos[1])
+        self.label_2.grid(row=label2_pos[0], column=label2_pos[1])
+
+
+@dataclass
+class LabelEntryPair:
+    """Una tk.label y una tk.entry"""
+
+    label: tk.Label
+    entry: tk.Entry | tk.Label
+
+    def render(self, label_pos: tuple[int, int], entry_pos: tuple[int, int]) -> None:
+        """Coloca el elemento en la posición asignada"""
+        self.label.grid(row=label_pos[0], column=label_pos[1])
+        self.entry.grid(row=entry_pos[0], column=entry_pos[1])
 
 
 class DisplayStack:
@@ -52,7 +65,7 @@ class DisplayStack:
                     width=entry_width,
                 )
 
-                pair = LabelPair(label, entry)
+                pair = LabelEntryPair(label, entry)
 
             elif elem["type"] == "LabelPair":
                 label1 = tk.Label(
@@ -72,5 +85,5 @@ class DisplayStack:
                 pair = LabelPair(label1, label2)
 
             if pair is not None:
-                pair.place(elem["position"][0], elem["position"][1])
+                pair.render(elem["position"][0], elem["position"][1])
                 self.stack[elem["name"]] = pair

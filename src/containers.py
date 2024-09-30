@@ -329,13 +329,13 @@ class TotalsContainer:
         btn_capture.grid(row=1, column=1, pady=5)
         btn_capture.bind("<Button-1>", lambda *_: ev.capture_report(self, register_id))
 
-        self.profits_stack.stack["initial_funds"].element_2.bind(
+        self.profits_stack.stack["initial_funds"].entry.bind(
             "<KeyRelease>", lambda *_: self.update_total_profits()
         )
-        self.profits_stack.stack["additional_funds"].element_2.bind(
+        self.profits_stack.stack["additional_funds"].entry.bind(
             "<KeyRelease>", lambda *_: self.update_total_profits()
         )
-        self.report_stack.stack["reported_funds"].element_2.bind(
+        self.report_stack.stack["reported_funds"].entry.bind(
             "<KeyRelease>", lambda *_: self.update_final_reports()
         )
 
@@ -348,19 +348,19 @@ class TotalsContainer:
         self.containers_variables["machine_variable"].trace_add(
             "write",
             lambda *_: self.update_total_expenses(
-                self.expenses_stack.stack["machine_prices"].element_2
+                self.expenses_stack.stack["machine_prices"].entry
             ),
         )
         self.containers_variables["replenish_variable"].trace_add(
             "write",
             lambda *_: self.update_total_expenses(
-                self.expenses_stack.stack["machine_replenishments"].element_2
+                self.expenses_stack.stack["machine_replenishments"].entry
             ),
         )
         self.containers_variables["bussiness_variable"].trace_add(
             "write",
             lambda *_: self.update_total_expenses(
-                self.expenses_stack.stack["misc_expenses"].element_2
+                self.expenses_stack.stack["misc_expenses"].entry
             ),
         )
         self.containers_variables["products_variable"].trace_add(
@@ -371,14 +371,14 @@ class TotalsContainer:
         """Actualiza los totales de los ingresos del producto"""
         try:
             initial_funds = int(
-                self.profits_stack.stack["initial_funds"].element_2.get()
+                self.profits_stack.stack["initial_funds"].entry.get()
             )
         except ValueError:
             initial_funds = 0
 
         try:
             additional_funds = int(
-                self.profits_stack.stack["additional_funds"].element_2.get()
+                self.profits_stack.stack["additional_funds"].entry.get()
             )
         except ValueError:
             additional_funds = 0
@@ -389,7 +389,7 @@ class TotalsContainer:
             + additional_funds
         )
 
-        self.update_entry(self.profits_stack.stack["products_profits"].element_2)
+        self.update_entry(self.profits_stack.stack["products_profits"].entry)
         self.update_final_reports()
 
     def update_total_expenses(self, entry: tk.Entry) -> None:
@@ -407,14 +407,14 @@ class TotalsContainer:
         """Actualiza la sección de reportes finales de la ventana principal"""
         try:
             reported_funds = int(
-                self.report_stack.stack["reported_funds"].element_2.get()
+                self.report_stack.stack["reported_funds"].entry.get()
             )
         except ValueError:
             reported_funds = 0
 
         try:
             initial_funds = int(
-                self.profits_stack.stack["initial_funds"].element_2.get()
+                self.profits_stack.stack["initial_funds"].entry.get()
             )
         except ValueError:
             initial_funds = 0
@@ -430,9 +430,9 @@ class TotalsContainer:
             self.total_variables["expected_funds"].get() - initial_funds
         )
 
-        self.update_entry(self.report_stack.stack["expected_funds"].element_2)
-        self.update_entry(self.report_stack.stack["difference"].element_2)
-        self.update_entry(self.report_stack.stack["balance"].element_2)
+        self.update_entry(self.report_stack.stack["expected_funds"].entry)
+        self.update_entry(self.report_stack.stack["difference"].entry)
+        self.update_entry(self.report_stack.stack["balance"].entry)
 
     def fill_entries(self, register_id: int) -> None:
         """
@@ -445,9 +445,9 @@ class TotalsContainer:
         WHERE register_id = ?
         """
 
-        self.profits_stack.stack["initial_funds"].element_2.delete(0, tk.END)
-        self.profits_stack.stack["additional_funds"].element_2.delete(0, tk.END)
-        self.report_stack.stack["reported_funds"].element_2.delete(0, tk.END)
+        self.profits_stack.stack["initial_funds"].entry.delete(0, tk.END)
+        self.profits_stack.stack["additional_funds"].entry.delete(0, tk.END)
+        self.report_stack.stack["reported_funds"].entry.delete(0, tk.END)
 
         self.update_total_profits()
 
@@ -459,11 +459,11 @@ class TotalsContainer:
         if entry_values == ():
             return
 
-        self.profits_stack.stack["initial_funds"].element_2.insert(0, entry_values[0])
-        self.profits_stack.stack["additional_funds"].element_2.insert(
+        self.profits_stack.stack["initial_funds"].entry.insert(0, entry_values[0])
+        self.profits_stack.stack["additional_funds"].entry.insert(
             0, entry_values[1]
         )
-        self.report_stack.stack["reported_funds"].element_2.insert(0, entry_values[2])
+        self.report_stack.stack["reported_funds"].entry.insert(0, entry_values[2])
 
     def update_entry(self, entry: tk.Entry) -> None:
         """Actualiza una entrada de solo lectura"""
