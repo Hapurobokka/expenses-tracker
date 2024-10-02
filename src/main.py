@@ -5,7 +5,8 @@ Hecho por Hapurobokka
 """
 
 import tkinter as tk
-from containers import TreeContainer, ProductsContainer, TotalsContainer
+from containers import TreeContainer, ProductsContainer 
+from total_container import TotalsContainer 
 import core
 import events as ev
 

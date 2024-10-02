@@ -17,8 +17,8 @@ if TYPE_CHECKING:
         TreeContainer,
         SimpleContainer,
         ProductsContainer,
-        TotalsContainer,
     )
+    from total_container import TotalsContainer
 
 
 def validate_fields(fields: list) -> bool:

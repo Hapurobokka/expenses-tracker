@@ -13,7 +13,7 @@ class LabelPair:
     """Un par de tk.labels"""
 
     label_1: tk.Label
-    label_2: tk.Entry | tk.Label
+    label_2: tk.Label
 
     def render(self, label1_pos: tuple[int, int], label2_pos: tuple[int, int]) -> None:
         """Coloca el elemento en la posición asignada"""
@@ -26,7 +26,7 @@ class LabelEntryPair:
     """Una tk.label y una tk.entry"""
 
     label: tk.Label
-    entry: tk.Entry | tk.Label
+    entry: tk.Entry
 
     def render(self, label_pos: tuple[int, int], entry_pos: tuple[int, int]) -> None:
         """Coloca el elemento en la posición asignada"""
@@ -34,56 +34,58 @@ class LabelEntryPair:
         self.entry.grid(row=entry_pos[0], column=entry_pos[1])
 
 
-class DisplayStack:
-    """Muchos LabelPairs colocados encima de otro, o algo así"""
-    def __init__(
-        self,
-        root: tk.Frame,
-        label_name: str,
-        elements: list[dict],
-        label_width: int = 19,
-        entry_width: int = 10,
-    ):
-        self.stack = {}
-        self.label_frame = tk.LabelFrame(root, text=label_name)
+def create_stack(
+    root: tk.Frame,
+    label_name: str,
+    elements: list[dict],
+    position: tuple[int, int],
+    label_width: int = 19,
+    entry_width: int = 10,
+):
+    stack = {}
+    label_frame = tk.LabelFrame(root, text=label_name)
 
-        for elem in elements:
-            pair = None
+    for elem in elements:
+        pair = None
 
-            if elem["type"] == "LabelEntryPair":
-                label = tk.Label(
-                    master=self.label_frame,
-                    text=elem["label_text"],
-                    anchor="w",
-                    width=label_width,
-                )
+        if elem["type"] == "LabelEntryPair":
+            label = tk.Label(
+                master=label_frame,
+                text=elem["label_text"],
+                anchor="w",
+                width=label_width,
+            )
 
-                entry = tk.Entry(
-                    master=self.label_frame,
-                    state=elem["state"],
-                    textvariable=elem["textvariable"],
-                    width=entry_width,
-                )
+            entry = tk.Entry(
+                master=label_frame,
+                state=elem["state"],
+                textvariable=elem["textvariable"],
+                width=entry_width,
+            )
 
-                pair = LabelEntryPair(label, entry)
+            pair = LabelEntryPair(label, entry)
 
-            elif elem["type"] == "LabelPair":
-                label1 = tk.Label(
-                    master=self.label_frame,
-                    text=elem["label_text"],
-                    anchor="w",
-                    width=label_width,
-                )
+        elif elem["type"] == "LabelPair":
+            label1 = tk.Label(
+                master=label_frame,
+                text=elem["label_text"],
+                anchor="w",
+                width=label_width,
+            )
 
-                label2 = tk.Label(
-                    master=self.label_frame,
-                    textvariable=elem["textvariable"],
-                    anchor="w",
-                    width=entry_width,
-                )
+            label2 = tk.Label(
+                master=label_frame,
+                textvariable=elem["textvariable"],
+                anchor="w",
+                width=entry_width,
+            )
 
-                pair = LabelPair(label1, label2)
+            pair = LabelPair(label1, label2)
 
-            if pair is not None:
-                pair.render(elem["position"][0], elem["position"][1])
-                self.stack[elem["name"]] = pair
+        if pair is not None:
+            pair.render(elem["position"][0], elem["position"][1])
+            stack[elem["name"]] = pair
+
+    label_frame.grid(row=position[0], column=position[1], padx=5)
+
+    return stack
